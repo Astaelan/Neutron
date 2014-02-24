@@ -1,0 +1,126 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{EDBD8BB5-A818-4EED-A835-31BE769D734D}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Neutron</RootNamespace>
+    <AssemblyName>Neutron</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <StartupObject>Neutron.Program</StartupObject>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.Cci.Analysis.ControlAndDataFlowGraph">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.Analysis.ControlAndDataFlowGraph.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.AstsProjectedAsCodeModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.AstsProjectedAsCodeModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.CodeModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.CodeModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.CodeModelToIL">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.CodeModelToIL.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.ContractExtractor">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.ContractExtractor.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.CSharpSourceEmitter">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.CSharpSourceEmitter.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.ILGenerator">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.ILGenerator.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.MetadataHelper">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.MetadataHelper.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.MetadataModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.MetadataModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.MutableCodeModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.MutableCodeModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.MutableMetadataModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.MutableMetadataModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.NewILToCodeModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.NewILToCodeModel.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.PdbReader">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.PdbReader.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.PdbWriter">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.PdbWriter.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.PeReader">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.PeReader.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.PeWriter">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.PeWriter.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.ReflectionEmitter">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.ReflectionEmitter.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.SourceEmitter">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.SourceEmitter.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Cci.SourceModel">
+      <HintPath>..\packages\CCI.1.0.13\lib\net40\Microsoft.Cci.SourceModel.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Neutron.HLIR\Neutron.HLIR.csproj">
+      <Project>{fe21b81e-6bc2-4c13-8d1e-e95ef3e40961}</Project>
+      <Name>Neutron.HLIR</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Neutron.LLIR\Neutron.LLIR.csproj">
+      <Project>{d1ee57b9-8c21-4ed9-bff4-caf0c67f0b8e}</Project>
+      <Name>Neutron.LLIR</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

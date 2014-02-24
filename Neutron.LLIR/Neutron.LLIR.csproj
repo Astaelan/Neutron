@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{D1EE57B9-8C21-4ED9-BFF4-CAF0C67F0B8E}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Neutron.LLIR</RootNamespace>
+    <AssemblyName>Neutron.LLIR</AssemblyName>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Instructions\LLCallInstruction.cs" />
+    <Compile Include="Instructions\LLSwitchInstruction.cs" />
+    <Compile Include="Instructions\LLCompareFloatsInstruction.cs" />
+    <Compile Include="Instructions\LLCompareIntegersInstruction.cs" />
+    <Compile Include="Instructions\LLIntegerToPointerInstruction.cs" />
+    <Compile Include="Instructions\LLPointerToIntegerInstruction.cs" />
+    <Compile Include="Instructions\LLIntegerToFloatInstruction.cs" />
+    <Compile Include="Instructions\LLFloatToIntegerInstruction.cs" />
+    <Compile Include="Instructions\LLTruncateInstruction.cs" />
+    <Compile Include="Instructions\LLExtendInstruction.cs" />
+    <Compile Include="Instructions\LLCompareExchangeInstruction.cs" />
+    <Compile Include="Instructions\LLXorInstruction.cs" />
+    <Compile Include="Instructions\LLOrInstruction.cs" />
+    <Compile Include="Instructions\LLAndInstruction.cs" />
+    <Compile Include="Instructions\LLSignedRightShiftInstruction.cs" />
+    <Compile Include="Instructions\LLUnsignedRightShiftInstruction.cs" />
+    <Compile Include="Instructions\LLLeftShiftInstruction.cs" />
+    <Compile Include="Instructions\LLRemainderInstruction.cs" />
+    <Compile Include="Instructions\LLMultiplyInstruction.cs" />
+    <Compile Include="Instructions\LLDivideInstruction.cs" />
+    <Compile Include="Instructions\LLSubtractInstruction.cs" />
+    <Compile Include="Instructions\LLAddInstruction.cs" />
+    <Compile Include="Instructions\LLBinaryInstruction.cs" />
+    <Compile Include="Instructions\LLGetElementPointerInstruction.cs" />
+    <Compile Include="Instructions\LLBranchInstruction.cs" />
+    <Compile Include="Instructions\LLGotoInstruction.cs" />
+    <Compile Include="Instructions\LLCommentInstruction.cs" />
+    <Compile Include="Instructions\LLLabelInstruction.cs" />
+    <Compile Include="Instructions\LLBitcastInstruction.cs" />
+    <Compile Include="Instructions\LLLoadInstruction.cs" />
+    <Compile Include="Instructions\LLReturnInstruction.cs" />
+    <Compile Include="Instructions\LLStoreInstruction.cs" />
+    <Compile Include="Instructions\LLAllocateInstruction.cs" />
+    <Compile Include="LLFunction.cs" />
+    <Compile Include="Instructions\LLConversionInstruction.cs" />
+    <Compile Include="LLInstructionBlock.cs" />
+    <Compile Include="LLLabel.cs" />
+    <Compile Include="LLGlobal.cs" />
+    <Compile Include="LLLiteral.cs" />
+    <Compile Include="LLLabelList.cs" />
+    <Compile Include="LLLocalList.cs" />
+    <Compile Include="LLParameterList.cs" />
+    <Compile Include="LLTemporary.cs" />
+    <Compile Include="LLParameter.cs" />
+    <Compile Include="LLLocal.cs" />
+    <Compile Include="LLLocation.cs" />
+    <Compile Include="LLInstruction.cs" />
+    <Compile Include="LLModule.cs" />
+    <Compile Include="LLPrimitive.cs" />
+    <Compile Include="LLType.cs" />
+    <Compile Include="Locations\LLGlobalLocation.cs" />
+    <Compile Include="Locations\LLLiteralLocation.cs" />
+    <Compile Include="Locations\LLFunctionLocation.cs" />
+    <Compile Include="Locations\LLTemporaryLocation.cs" />
+    <Compile Include="Locations\LLParameterLocation.cs" />
+    <Compile Include="Locations\LLLocalLocation.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
