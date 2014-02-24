@@ -29,15 +29,29 @@ namespace Neutron.HLIR
         private static Dictionary<string, HLParameter> sParameters = new Dictionary<string, HLParameter>();
         private static Dictionary<string, HLLocal> sLocals = new Dictionary<string, HLLocal>();
 
+        private static HLMethod sSystemStringCtorWithCharPointer = null;
+        public static HLMethod SystemStringCtorWithCharPointer { get { return sSystemStringCtorWithCharPointer; } }
+
         private static Queue<HLMethod> sPendingMethods = new Queue<HLMethod>();
+
+        private static LLFunction sGCAllocateFunction = null;
+        public static LLFunction GCAllocFunction { get { return sGCAllocateFunction; } }
 
         public static void Process(string pInputPath)
         {
             sModule = Decompiler.GetCodeModelFromMetadataModel(Host, Host.LoadUnitFrom(pInputPath) as IModule, null);
             sPlatformType = Module.PlatformType;
 
-            //HLType typeEntry = GetOrCreateType(Module.EntryPoint.ContainingType);
             HLMethod methodEntry = GetOrCreateMethod(Module.EntryPoint);
+            foreach (IMethodDefinition method in PlatformType.SystemString.ResolvedType.Methods.Where(d => d.IsConstructor && d.ParameterCount == 1))
+            {
+                IParameterDefinition parameter = method.Parameters.First();
+                if (!(parameter.Type is IPointerTypeReference)) continue;
+                if (((IPointerTypeReference)parameter.Type).TargetType.TypeCode != PrimitiveTypeCode.Char) continue;
+                sSystemStringCtorWithCharPointer = GetOrCreateMethod(method);
+                break;
+            }
+            if (sSystemStringCtorWithCharPointer == null) throw new MissingMethodException();
 
             // STARTED: Process IStatements/IExpressions into HLInstructionBlocks/HLInstructions
             while (sPendingMethods.Count > 0) sPendingMethods.Dequeue().Process();
@@ -47,6 +61,12 @@ namespace Neutron.HLIR
             foreach (HLType type in sTypes.Values) type.LayoutFields();
 
             // DONE: Convert HLTypes to LLTypes
+
+            List<LLParameter> parametersGCAllocateFunction = new List<LLParameter>();
+            parametersGCAllocateFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 2), "this"));
+            parametersGCAllocateFunction.Add(LLParameter.Create(LLModule.GetOrCreateUnsignedType(32), "size"));
+            sGCAllocateFunction = LLModule.GetOrCreateFunction("GCAllocate", true, LLModule.VoidType, parametersGCAllocateFunction, true, false);
+
             foreach (HLType type in sTypes.Values)
             {
                 // DONE: Create LLGlobal for static constructors
@@ -59,9 +79,16 @@ namespace Neutron.HLIR
             {
                 // DONE: Convert HLMethods to LLFunctions
                 List<LLParameter> parameters = new List<LLParameter>();
-                foreach (HLParameter parameter in method.Parameters) parameters.Add(LLParameter.Create(parameter.Type.LLType, parameter.Name));
+                foreach (HLParameter parameter in method.Parameters)
+                {
+                    LLType typeParameter = parameter.Type.LLType;
+                    // DONE: Adjust first parameter for string constructors to additional pointer depth plus one
+                    if (parameter == method.Parameters.First() && method.Container == SystemString && !method.IsStatic && method.IsConstructor)
+                        typeParameter = typeParameter.PointerDepthPlusOne;
+                    parameters.Add(LLParameter.Create(typeParameter, parameter.Name));
+                }
                 bool entryFunction = method == methodEntry;
-                method.LLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : method.Name, entryFunction, method.ReturnType.LLType, parameters, method.IsExternal, false);
+                method.LLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (method.Container.ToString() + "." + method.ToString()), entryFunction, method.ReturnType.LLType, parameters, method.IsExternal, false);
                 foreach (HLParameter parameter in method.Parameters.Where(p => p.RequiresAddressing)) parameter.AddressableLocal = method.LLFunction.CreateLocal(parameter.Type.LLType, "local_" + parameter.Name);
                 foreach (HLLocal local in method.Locals) method.LLFunction.CreateLocal(local.Type.LLType, local.Name);
                 foreach (HLTemporary temporary in method.Temporaries) method.LLFunction.CreateLocal(temporary.Type.LLType, temporary.Name);
@@ -142,6 +169,7 @@ namespace Neutron.HLIR
 
             method.IsStatic = pDefinition.IsStatic;
             method.IsExternal = pDefinition.IsExternal;
+            method.IsConstructor = pDefinition.IsConstructor;
             method.ReturnType = GetOrCreateType(pDefinition.Type);
             if (!pDefinition.IsStatic && !pDefinition.HasExplicitThisParameter)
             {

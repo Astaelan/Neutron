@@ -114,6 +114,7 @@
     <Compile Include="Instructions\HLModulusInstruction.cs" />
     <Compile Include="Instructions\HLDivideInstruction.cs" />
     <Compile Include="Instructions\HLMultiplyInstruction.cs" />
+    <Compile Include="Instructions\HLNewArrayInstruction.cs" />
     <Compile Include="Instructions\HLNewObjectInstruction.cs" />
     <Compile Include="Instructions\HLSubtractInstruction.cs" />
     <Compile Include="Instructions\HLAddInstruction.cs" />

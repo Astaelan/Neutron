@@ -34,6 +34,9 @@ namespace Neutron.HLIR
         private bool mIsExternal = false;
         public bool IsExternal { get { return mIsExternal; } internal set { mIsExternal = value; } }
 
+        private bool mIsConstructor = false;
+        public bool IsConstructor { get { return mIsConstructor; } internal set { mIsConstructor = value; } }
+
         private HLType mReturnType = null;
         public HLType ReturnType { get { return mReturnType; } internal set { mReturnType = value; } }
 
@@ -213,6 +216,7 @@ namespace Neutron.HLIR
             if (pExpression is ICompileTimeConstant) return ProcessCompileTimeConstantExpression(pExpression as ICompileTimeConstant);
             if (pExpression is IConditional) return ProcessConditionalExpression(pExpression as IConditional);
             if (pExpression is IConversion) return ProcessConversionExpression(pExpression as IConversion);
+            if (pExpression is ICreateArray) return ProcessCreateArrayExpression(pExpression as ICreateArray);
             if (pExpression is ICreateObjectInstance) return ProcessCreateObjectInstanceExpression(pExpression as ICreateObjectInstance);
             if (pExpression is IDefaultValue) return ProcessDefaultValueExpression(pExpression as IDefaultValue);
             if (pExpression is IDivision) return ProcessDivisionExpression(pExpression as IDivision);
@@ -383,6 +387,26 @@ namespace Neutron.HLIR
             HLLocation locationTemporary = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.TypeAfterConversion)));
             mCurrentBlock.EmitAssignment(locationTemporary, locationSource);
             return locationTemporary;
+        }
+
+        private HLLocation ProcessCreateArrayExpression(ICreateArray pExpression)
+        {
+            if (pExpression.Rank != 1 || pExpression.Sizes.Count() != 1 || pExpression.LowerBounds.Count() > 0) throw new NotSupportedException();
+
+            HLType typeElement = HLDomain.GetOrCreateType(pExpression.ElementType);
+            HLLocation locationInstance = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
+            HLLocation locationSize = ProcessExpression(pExpression.Sizes.First());
+            mCurrentBlock.EmitNewArray(locationInstance.AddressOf(), locationSize, typeElement);
+
+            IExpression[] initializers = pExpression.Initializers.ToArray();
+            for (int indexInitializer = 0; indexInitializer < initializers.Length; ++indexInitializer)
+            {
+                HLLocation locationInitializer = ProcessExpression(initializers[indexInitializer]);
+                HLLocation locationArrayElement = HLArrayElementLocation.Create(locationInstance, HLInt32LiteralLocation.Create(indexInitializer), typeElement);
+                mCurrentBlock.EmitAssignment(locationArrayElement, locationInitializer);
+            }
+
+            return locationInstance;
         }
 
         private HLLocation ProcessCreateObjectInstanceExpression(ICreateObjectInstance pExpression)

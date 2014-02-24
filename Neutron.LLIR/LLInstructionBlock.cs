@@ -97,7 +97,7 @@ namespace Neutron.LLIR
                                 }
                             case LLPrimitive.Unsigned: // Signed to Unsigned
                                 {
-                                    destination = LLTemporaryLocation.Create(Function.CreateTemporary(pType));
+                                    destination = LLTemporaryLocation.Create(Function.CreateTemporary(pType)); // TODO: Problem here, i32 to u32 creates var, but doesn't assign it
                                     if (pSource.Type.SizeInBits > pType.SizeInBits) EmitTruncate(destination, pSource);
                                     else if (pSource.Type.SizeInBits < pType.SizeInBits) EmitExtend(destination, pSource);
                                     break;

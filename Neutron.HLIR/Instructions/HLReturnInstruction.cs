@@ -31,7 +31,8 @@ namespace Neutron.HLIR.Instructions
 
         internal override void Transform(LLFunction pFunction)
         {
-            LLLocation locationSource = mSource.Load(pFunction);
+            LLLocation locationSource = null;
+            if (mSource != null) locationSource = mSource.Load(pFunction);
             pFunction.CurrentBlock.EmitReturn(locationSource);
         }
     }
