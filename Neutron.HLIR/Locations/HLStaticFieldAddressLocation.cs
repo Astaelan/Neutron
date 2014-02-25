@@ -28,6 +28,7 @@ namespace Neutron.HLIR.Locations
         internal static void CheckStaticConstructorCalled(LLFunction pFunction, HLType pType)
         {
             if (pType.StaticConstructor == null) return;
+            if (pType.StaticConstructor.LLFunction == pFunction) return;
             LLLocation locationConstructorCalled = LLGlobalLocation.Create(LLModule.GetGlobal(pType.ToString()));
             LLLocation locationConstructorCalledOriginal = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationConstructorCalled.Type.PointerDepthMinusOne));
             pFunction.CurrentBlock.EmitCompareExchange(locationConstructorCalledOriginal, locationConstructorCalled, LLLiteralLocation.Create(LLLiteral.Create(locationConstructorCalledOriginal.Type, "0")), LLLiteralLocation.Create(LLLiteral.Create(locationConstructorCalledOriginal.Type, "1")), LLCompareExchangeOrdering.acq_rel);

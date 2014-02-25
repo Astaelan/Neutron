@@ -31,6 +31,14 @@ namespace Neutron.HLIR.Instructions
 
         internal override void Transform(LLFunction pFunction)
         {
+            List<LLLocation> parameters = new List<LLLocation>();
+            LLLocation locationArrayReference = mDestinationSource.Load(pFunction);
+            pFunction.CurrentBlock.EmitStore(locationArrayReference, LLLiteralLocation.Create(LLLiteral.Create(locationArrayReference.Type.PointerDepthMinusOne, "zeroinitializer")));
+
+            parameters.Add(locationArrayReference);
+            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRootFunction.Parameters[1].Type, "null")));
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRootFunction), parameters);
+
             LLLocation locationSize = mSizeSource.Load(pFunction);
             LLLocation locationElementsSize = locationSize;
             if (mElementType.VariableSize > 1)
@@ -42,17 +50,13 @@ namespace Neutron.HLIR.Instructions
             pFunction.CurrentBlock.EmitAdd(locationTotalSize, locationElementsSize, LLLiteralLocation.Create(LLLiteral.Create(locationSize.Type, (HLDomain.SizeOfPointer + 4).ToString())));
             locationTotalSize = pFunction.CurrentBlock.EmitConversion(locationTotalSize, HLDomain.GCAllocFunction.Parameters[1].Type);
 
-            List<LLLocation> parameters = new List<LLLocation>();
-            parameters.Add(mDestinationSource.Load(pFunction));
+            parameters.Clear();
+            parameters.Add(locationArrayReference);
             parameters.Add(locationTotalSize);
-
-            pFunction.CurrentBlock.EmitStore(parameters[0], LLLiteralLocation.Create(LLLiteral.Create(parameters[0].Type.PointerDepthMinusOne, "zeroinitializer")));
-            // TODO: Mark nulled location as a gcroot
-
             pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCAllocFunction), parameters);
 
-            LLLocation locationArrayPointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(parameters[0].Type.PointerDepthMinusOne));
-            pFunction.CurrentBlock.EmitLoad(locationArrayPointer, parameters[0]);
+            LLLocation locationArrayPointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayReference.Type.PointerDepthMinusOne));
+            pFunction.CurrentBlock.EmitLoad(locationArrayPointer, locationArrayReference);
             locationArrayPointer = pFunction.CurrentBlock.EmitConversion(locationArrayPointer, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1));
             
             LLLocation locationArraySizePointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayPointer.Type));

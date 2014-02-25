@@ -12,13 +12,12 @@ namespace Neutron.LLIR
     {
         private string mName = null;
         private bool mExplicitName = false;
+        private bool mExternal = false;
         private string mDescription = null;
         private string mIdentifier = null;
         private string mIdentifierHash = null;
         private LLType mReturnType = null;
         private LLParameterList mParameters = null;
-        private bool mExternal = false;
-        private bool mIntrinsic = false;
         private LLLabelList mLabels = null;
         private LLLocalList mLocals = null;
         private int mTemporaryIndexer = 0;
@@ -29,13 +28,12 @@ namespace Neutron.LLIR
 
         public string Name { get { return mName; } internal set { mName = value; } }
         public bool ExplicitName { get { return mExplicitName; } set { mExplicitName = value; } }
+        public bool External { get { return mExternal; } set { mExternal = value; } }
         public string Description { get { return mDescription; } set { mDescription = value; } }
         public string Identifier { get { return mIdentifier; } internal set { mIdentifier = value; } }
         public string IdentifierHash { get { return mIdentifierHash; } internal set { mIdentifierHash = value; } }
         public LLType ReturnType { get { return mReturnType; } internal set { mReturnType = value; } }
         public LLParameterList Parameters { get { return mParameters; } internal set { mParameters = value; } }
-        public bool External { get { return mExternal; } set { mExternal = value; } }
-        public bool Intrinsic { get { return mIntrinsic; } set { mIntrinsic = value; } }
 
         public LLLabelList Labels { get { return mLabels; } }
         public LLLabel CreateLabel(int pIdentifier)
@@ -98,7 +96,7 @@ namespace Neutron.LLIR
 
         public override string ToString()
         {
-            return string.Format("@{0}", mExplicitName || mIntrinsic ? mName : mIdentifierHash);
+            return string.Format("@{0}", mExplicitName ? mName : mIdentifierHash);
         }
     }
 }

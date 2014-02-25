@@ -37,6 +37,9 @@ namespace Neutron.HLIR
         private static LLFunction sGCAllocateFunction = null;
         public static LLFunction GCAllocFunction { get { return sGCAllocateFunction; } }
 
+        private static LLFunction sGCRootFunction = null;
+        public static LLFunction GCRootFunction { get { return sGCRootFunction; } }
+
         public static void Process(string pInputPath)
         {
             sModule = Decompiler.GetCodeModelFromMetadataModel(Host, Host.LoadUnitFrom(pInputPath) as IModule, null);
@@ -62,10 +65,15 @@ namespace Neutron.HLIR
 
             // DONE: Convert HLTypes to LLTypes
 
-            List<LLParameter> parametersGCAllocateFunction = new List<LLParameter>();
-            parametersGCAllocateFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 2), "this"));
-            parametersGCAllocateFunction.Add(LLParameter.Create(LLModule.GetOrCreateUnsignedType(32), "size"));
-            sGCAllocateFunction = LLModule.GetOrCreateFunction("GCAllocate", true, LLModule.VoidType, parametersGCAllocateFunction, true, false);
+            List<LLParameter> parametersFunction = new List<LLParameter>();
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 2), "this"));
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreateUnsignedType(32), "size"));
+            sGCAllocateFunction = LLModule.GetOrCreateFunction("GCAllocate", true, true, LLModule.VoidType, parametersFunction);
+
+            parametersFunction.Clear();
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 2), "ptrloc"));
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), "metadata"));
+            sGCRootFunction = LLModule.GetOrCreateFunction("llvm.gcroot", true, true, LLModule.VoidType, parametersFunction);
 
             foreach (HLType type in sTypes.Values)
             {
@@ -88,7 +96,7 @@ namespace Neutron.HLIR
                     parameters.Add(LLParameter.Create(typeParameter, parameter.Name));
                 }
                 bool entryFunction = method == methodEntry;
-                method.LLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (method.Container.ToString() + "." + method.ToString()), entryFunction, method.ReturnType.LLType, parameters, method.IsExternal, false);
+                method.LLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (method.Container.ToString() + "." + method.ToString()), entryFunction, method.IsExternal, method.ReturnType.LLType, parameters);
                 method.LLFunction.Description = method.Signature;
                 foreach (HLParameter parameter in method.Parameters.Where(p => p.RequiresAddressing)) parameter.AddressableLocal = method.LLFunction.CreateLocal(parameter.Type.LLType, "local_" + parameter.Name);
                 foreach (HLLocal local in method.Locals) method.LLFunction.CreateLocal(local.Type.LLType, local.Name);

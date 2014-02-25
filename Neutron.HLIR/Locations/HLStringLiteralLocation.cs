@@ -30,7 +30,12 @@ namespace Neutron.HLIR.Locations
             LLLocation locationStringReference = LLTemporaryLocation.Create(pFunction.CreateTemporary(HLDomain.SystemStringCtorWithCharPointer.Parameters[0].Type.LLType.PointerDepthPlusOne));
             pFunction.CurrentBlock.EmitAllocate(locationStringReference);
             pFunction.CurrentBlock.EmitStore(locationStringReference, LLLiteralLocation.Create(LLLiteral.Create(locationStringReference.Type.PointerDepthMinusOne, "zeroinitializer")));
-            // TODO: Mark nulled location as a gcroot
+
+            parameters.Add(locationStringReference);
+            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRootFunction.Parameters[1].Type, "null")));
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRootFunction), parameters);
+
+            parameters.Clear();
             parameters.Add(locationStringReference);
 
             char[] data = Literal.ToCharArray();

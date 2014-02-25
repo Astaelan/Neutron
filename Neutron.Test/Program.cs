@@ -18,8 +18,10 @@ namespace Neutron.Test
             //int x = 0;
             //x = x + 1;
             //return x == 0 ? 0 : 42;
+            object o = new object();
+            string s = new string('A', 42);
             TestX x = new TestX();
-            return x.Test(42);
+            return x.Test(s.Length);
         }
 
         private struct TestX
