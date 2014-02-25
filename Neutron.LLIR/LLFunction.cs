@@ -12,6 +12,7 @@ namespace Neutron.LLIR
     {
         private string mName = null;
         private bool mExplicitName = false;
+        private string mDescription = null;
         private string mIdentifier = null;
         private string mIdentifierHash = null;
         private LLType mReturnType = null;
@@ -28,6 +29,7 @@ namespace Neutron.LLIR
 
         public string Name { get { return mName; } internal set { mName = value; } }
         public bool ExplicitName { get { return mExplicitName; } set { mExplicitName = value; } }
+        public string Description { get { return mDescription; } set { mDescription = value; } }
         public string Identifier { get { return mIdentifier; } internal set { mIdentifier = value; } }
         public string IdentifierHash { get { return mIdentifierHash; } internal set { mIdentifierHash = value; } }
         public LLType ReturnType { get { return mReturnType; } internal set { mReturnType = value; } }

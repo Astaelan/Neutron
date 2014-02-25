@@ -282,13 +282,19 @@ namespace Neutron.LLIR
 
             List<LLFunction> functionsExternal = sFunctions.Values.Where(f => f.External && !f.Intrinsic).ToList();
             foreach (LLFunction function in functionsExternal)
-                pWriter.WriteLine("declare {0}", function.Declaration);
+            {
+                pWriter.Write("declare {0}", function.Declaration);
+                if (function.Description != null) pWriter.Write("    ; {0}", function.Description);
+                pWriter.WriteLine();
+            }
             if (functionsExternal.Count > 0) pWriter.WriteLine();
 
             List<LLFunction> functionsInternal = sFunctions.Values.Where(f => !f.External && !f.Intrinsic).ToList();
             foreach (LLFunction function in functionsInternal)
             {
-                pWriter.WriteLine("define {0}", function.Declaration);
+                pWriter.Write("define {0}", function.Declaration);
+                if (function.Description != null) pWriter.Write("    ; {0}", function.Description);
+                pWriter.WriteLine();
                 pWriter.WriteLine("{");
                 foreach (LLInstructionBlock block in function.Blocks)
                 {

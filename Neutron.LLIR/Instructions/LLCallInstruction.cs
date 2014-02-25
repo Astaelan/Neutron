@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neutron.LLIR.Locations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -34,6 +35,11 @@ namespace Neutron.LLIR.Instructions
                 sb.AppendFormat("{0} {1}", parameterSource.Type, parameterSource);
             }
             sb.Append(")");
+            if (mFunctionSource is LLFunctionLocation)
+            {
+                LLFunction function = ((LLFunctionLocation)mFunctionSource).Function;
+                if (function.Description != null) sb.AppendFormat("    ; {0}", function.Description);
+            }
             return sb.ToString();
         }
     }

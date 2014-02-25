@@ -89,6 +89,7 @@ namespace Neutron.HLIR
                 }
                 bool entryFunction = method == methodEntry;
                 method.LLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (method.Container.ToString() + "." + method.ToString()), entryFunction, method.ReturnType.LLType, parameters, method.IsExternal, false);
+                method.LLFunction.Description = method.Signature;
                 foreach (HLParameter parameter in method.Parameters.Where(p => p.RequiresAddressing)) parameter.AddressableLocal = method.LLFunction.CreateLocal(parameter.Type.LLType, "local_" + parameter.Name);
                 foreach (HLLocal local in method.Locals) method.LLFunction.CreateLocal(local.Type.LLType, local.Name);
                 foreach (HLTemporary temporary in method.Temporaries) method.LLFunction.CreateLocal(temporary.Type.LLType, temporary.Name);
