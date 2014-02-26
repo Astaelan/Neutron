@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Neutron.LLIR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,5 +26,12 @@ namespace Neutron.HLIR.Instructions
         internal override bool IsTerminator { get { return true; } }
 
         public override string ToString() { return string.Format("if ({0}) goto {1} else goto {2}", mConditionSource, mTrueLabel, mFalseLabel); }
+
+        internal override void Transform(LLFunction pFunction)
+        {
+            LLLocation locationCondition = mConditionSource.Load(pFunction);
+            locationCondition = pFunction.CurrentBlock.EmitConversion(locationCondition, LLModule.BooleanType);
+            pFunction.CurrentBlock.EmitBranch(locationCondition, pFunction.Labels.GetByIdentifier(mTrueLabel.Identifier), pFunction.Labels.GetByIdentifier(mFalseLabel.Identifier));
+        }
     }
 }

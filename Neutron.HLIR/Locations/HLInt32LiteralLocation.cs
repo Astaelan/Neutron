@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Neutron.HLIR.Locations
 {
-    public sealed class HLInt32LiteralLocation : HLLocation
+    public sealed class HLInt32LiteralLocation : HLLiteralLocation
     {
         public static HLInt32LiteralLocation Create(int pLiteral)
         {
@@ -30,5 +30,7 @@ namespace Neutron.HLIR.Locations
         {
             return LLLiteralLocation.Create(LLLiteral.Create(Type.LLType, Literal.ToString()));
         }
+
+        public override string LiteralAsString { get { return Literal.ToString(); } }
     }
 }

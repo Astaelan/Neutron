@@ -111,6 +111,7 @@ namespace Neutron.HLIR
             else if (pStatement is ILabeledStatement) ProcessLabeledStatement(pStatement as ILabeledStatement);
             else if (pStatement is ILocalDeclarationStatement) ProcessLocalDeclarationStatement(pStatement as ILocalDeclarationStatement);
             else if (pStatement is IReturnStatement) ProcessReturnStatement(pStatement as IReturnStatement);
+            else if (pStatement is ISwitchStatement) ProcessSwitchStatement(pStatement as ISwitchStatement);
             else throw new NotSupportedException();
         }
 
@@ -200,6 +201,46 @@ namespace Neutron.HLIR
             HLLocation locationExpression = null;
             if (pStatement.Expression != null) locationExpression = ProcessExpression(pStatement.Expression);
             mCurrentBlock.EmitReturn(locationExpression);
+        }
+
+        private void ProcessSwitchStatement(ISwitchStatement pStatement)
+        {
+            //if (mCurrentBlock.Terminated) mCurrentBlock = CreateBlock(CreateLabel());
+
+            HLLocation locationCondition = ProcessExpression(pStatement.Expression);
+            HLInstructionBlock blockParent = mCurrentBlock;
+
+            List<HLInstructionBlock> blocksCases = new List<HLInstructionBlock>();
+            HLInstructionBlock blockDefaultCase = null;
+            List<Tuple<HLLiteralLocation, HLLabel>> cases = new List<Tuple<HLLiteralLocation, HLLabel>>();
+            foreach (ISwitchCase switchCase in pStatement.Cases)
+            {
+                HLInstructionBlock blockCase = CreateBlock(CreateLabel());
+                mCurrentBlock = blockCase;
+                blocksCases.Add(blockCase);
+                if (switchCase.IsDefault) blockDefaultCase = blockCase;
+                else
+                {
+                    HLLiteralLocation locationCase = (HLLiteralLocation)ProcessCompileTimeConstantExpression(switchCase.Expression);
+                    cases.Add(new Tuple<HLLiteralLocation, HLLabel>(locationCase, blockCase.StartLabel));
+                }
+                foreach (IStatement statementCase in switchCase.Body)
+                    ProcessStatement(statementCase);
+            }
+            if (blockDefaultCase == null)
+            {
+                blockDefaultCase = CreateBlock(CreateLabel());
+                mCurrentBlock = blockDefaultCase;
+                blocksCases.Add(blockDefaultCase);
+            }
+
+            blockParent.EmitSwitch(locationCondition, blockDefaultCase.StartLabel, cases);
+
+            if (!blocksCases.TrueForAll(b => b.Terminated))
+            {
+                mCurrentBlock = CreateBlock(CreateLabel());
+                blocksCases.ForEach(b => b.Terminate(mCurrentBlock.StartLabel));
+            }
         }
 
 

@@ -4,6 +4,8 @@
 #include <stdio.h>
 
 extern "C" {
+#pragma pack(push)
+#pragma pack(1)
 	struct SystemString
 	{
 		void* Reserved;
@@ -11,12 +13,15 @@ extern "C" {
 		int32_t StringLength;
 		int16_t FirstChar;
 	};
+#pragma pack(pop)
 
 	void __cdecl GCAllocate(void** _this, size_t size);
 
 	void __cdecl F_204310C5649413C5(SystemString** _this, int16_t* value);    // System.Void System.String..ctor(System.Char*)
 	void __cdecl F_164E479A86BE82E3(SystemString** _this, int16_t c, int32_t count);    // System.Void System.String..ctor(System.Char, System.Int32)
 	int32_t __cdecl F_5DB28D7B95C5BF0F(SystemString* _this);    // System.Int32 System.String.Length.get()
+
+	void __cdecl F_88DF95E6873B512C(SystemString* str);    // System.Void Neutron.Test.Program.ConsoleWrite(System.String str)
 };
 
 void __cdecl GCAllocate(void** _this, size_t size)
@@ -54,4 +59,11 @@ void __cdecl F_164E479A86BE82E3(SystemString** _this, int16_t c, int32_t count) 
 int32_t __cdecl F_5DB28D7B95C5BF0F(SystemString* _this)    // System.Int32 System.String.Length.get()
 {
 	return _this->StringLength;
+}
+
+
+
+void __cdecl F_88DF95E6873B512C(SystemString* str)    // System.Void Neutron.Test.Program.ConsoleWrite(System.String str)
+{
+	wprintf((wchar_t*)&str->FirstChar);
 }

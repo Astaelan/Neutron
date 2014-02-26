@@ -66,5 +66,6 @@ namespace Neutron.HLIR
         public void EmitNewObject(HLType pNewObjectType, HLLocation pDestinationSource) { Emit(HLNewObjectInstruction.Create(mMethod, pNewObjectType, pDestinationSource)); }
         public void EmitReturn(HLLocation pSource) { Emit(HLReturnInstruction.Create(mMethod, pSource)); }
         public void EmitSubtract(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLSubtractInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }
+        public void EmitSwitch(HLLocation pConditionSource, HLLabel pDefaultLabel, List<Tuple<HLLiteralLocation, HLLabel>> pCases) { Emit(HLSwitchInstruction.Create(mMethod, pConditionSource, pDefaultLabel, pCases)); }
     }
 }

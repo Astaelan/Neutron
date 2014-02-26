@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HLDomain.cs" />
+    <Compile Include="HLLiteralLocation.cs" />
     <Compile Include="HLTemporary.cs" />
     <Compile Include="HLLocal.cs" />
     <Compile Include="HLParameter.cs" />
@@ -105,6 +106,7 @@
     <Compile Include="HLInstructionBlock.cs" />
     <Compile Include="HLInstruction.cs" />
     <Compile Include="HLLabel.cs" />
+    <Compile Include="Instructions\HLSwitchInstruction.cs" />
     <Compile Include="Instructions\HLCallInstruction.cs" />
     <Compile Include="Instructions\HLBitwiseXorInstruction.cs" />
     <Compile Include="Instructions\HLBitwiseOrInstruction.cs" />
