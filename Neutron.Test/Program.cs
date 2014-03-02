@@ -24,14 +24,25 @@ namespace Neutron.Test
             //return x == 0 ? 0 : 42;
 
             //object o = new object();
-            string s = new string('A', 42);
+            //string s = new string('A', 42);
             //TestX x = new TestX();
             //return x.Test(s.Length);
 
-            ConsoleWrite(s);
-            TestX x = new TestX();
-            return x.Test(s.Length);
+            //ConsoleWrite(s);
+            //TestX x = new TestX();
+            //return x.Test(s.Length);
+
+            byte y = 42;
+            y++;
+            object x = y;
+            return (int)x;
+            //TestX x = new TestX();
+            //TestD d = x.Test;
+            //Func<int, int> 
+            //return d(42);
         }
+
+        private delegate int TestD(int x);
 
         private struct TestX
         {
@@ -40,13 +51,13 @@ namespace Neutron.Test
             {
                 //X = x;
                 //return X;
-                switch (x)
-                {
-                    case 0: x = 0; break;
-                    case 1: x = 1; break;
-                    default: x = x + 1; break;
+                //switch (x)
+                //{
+                //    case 0: x = 0; break;
+                //    case 1: x = 1; break;
+                //    default: x = x + 1; break;
 
-                }
+                //}
                 return x;
             }
         }

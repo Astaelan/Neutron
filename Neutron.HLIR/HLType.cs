@@ -9,7 +9,15 @@ namespace Neutron.HLIR
 {
     public sealed class HLType
     {
-        internal HLType() { }
+        private static int sRuntimeTypeHandle = 0;
+
+        internal HLType()
+        {
+            mRuntimeTypeHandle = sRuntimeTypeHandle++;
+        }
+
+        private int mRuntimeTypeHandle = 0;
+        public int RuntimeTypeHandle { get { return mRuntimeTypeHandle; } }
 
         private ITypeDefinition mDefinition = null;
         public ITypeDefinition Definition { get { return mDefinition; } internal set { mDefinition = value; } }

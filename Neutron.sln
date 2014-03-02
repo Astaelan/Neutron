@@ -14,6 +14,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neutron.HLIR", "Neutron.HLI
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neutron.Test", "Neutron.Test\Neutron.Test.csproj", "{7AAD5AC0-9CA3-4BD1-85F0-8462DE17A7BF}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Neutron.Runtime", "Neutron.Runtime\Neutron.Runtime.csproj", "{ECAA2A4F-AA57-4DBD-9C7A-16B6DFCD983B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,6 +38,10 @@ Global
 		{7AAD5AC0-9CA3-4BD1-85F0-8462DE17A7BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7AAD5AC0-9CA3-4BD1-85F0-8462DE17A7BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7AAD5AC0-9CA3-4BD1-85F0-8462DE17A7BF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECAA2A4F-AA57-4DBD-9C7A-16B6DFCD983B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECAA2A4F-AA57-4DBD-9C7A-16B6DFCD983B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECAA2A4F-AA57-4DBD-9C7A-16B6DFCD983B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECAA2A4F-AA57-4DBD-9C7A-16B6DFCD983B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

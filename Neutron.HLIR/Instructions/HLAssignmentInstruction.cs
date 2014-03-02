@@ -26,6 +26,14 @@ namespace Neutron.HLIR.Instructions
         internal override void Transform(LLFunction pFunction)
         {
             LLLocation locationSource = mSource.Load(pFunction);
+            if (mSource.Type.Definition.IsValueType && mDestination.Type == HLDomain.SystemObject)
+            {
+                // TODO: Boxing
+            }
+            else if (mSource.Type == HLDomain.SystemObject && mDestination.Type.Definition.IsValueType)
+            {
+                // TODO: Unboxing
+            }
             mDestination.Store(pFunction, locationSource);
         }
     }

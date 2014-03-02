@@ -258,6 +258,7 @@ namespace Neutron.HLIR
             if (pExpression is IConditional) return ProcessConditionalExpression(pExpression as IConditional);
             if (pExpression is IConversion) return ProcessConversionExpression(pExpression as IConversion);
             if (pExpression is ICreateArray) return ProcessCreateArrayExpression(pExpression as ICreateArray);
+            if (pExpression is ICreateDelegateInstance) return ProcessCreateDelegateInstanceExpression(pExpression as ICreateDelegateInstance);
             if (pExpression is ICreateObjectInstance) return ProcessCreateObjectInstanceExpression(pExpression as ICreateObjectInstance);
             if (pExpression is IDefaultValue) return ProcessDefaultValueExpression(pExpression as IDefaultValue);
             if (pExpression is IDivision) return ProcessDivisionExpression(pExpression as IDivision);
@@ -448,6 +449,11 @@ namespace Neutron.HLIR
             }
 
             return locationInstance;
+        }
+
+        private HLLocation ProcessCreateDelegateInstanceExpression(ICreateDelegateInstance pExpression)
+        {
+            return null;
         }
 
         private HLLocation ProcessCreateObjectInstanceExpression(ICreateObjectInstance pExpression)
