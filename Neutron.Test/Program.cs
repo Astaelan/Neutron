@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 
 namespace Neutron.Test
 {
@@ -32,10 +29,14 @@ namespace Neutron.Test
             //TestX x = new TestX();
             //return x.Test(s.Length);
 
-            byte y = 42;
-            y++;
-            object x = y;
-            return (int)x;
+            ConsoleWrite("Hello World!");
+            return 42;
+
+            //byte y = 42;
+            //y++;
+            //object x = y;
+            //return (int)x;
+
             //TestX x = new TestX();
             //TestD d = x.Test;
             //Func<int, int> 

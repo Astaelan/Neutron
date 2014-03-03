@@ -7,7 +7,7 @@
 
         public MethodImplAttribute() { }
 
-        public MethodImplAttribute(MethodImplOptions options) { mOptions = options; }
+        public MethodImplAttribute(MethodImplOptions pOptions) { mOptions = pOptions; }
 
         public MethodImplOptions Value { get { return mOptions; } }
     }

@@ -2,11 +2,11 @@
 {
     public interface IComparable
     {
-        int CompareTo(object obj);
+        int CompareTo(object pValue);
     }
 
     public interface IComparable<T>
     {
-        int CompareTo(T x);
+        int CompareTo(T pValue);
     }
 }

@@ -5,7 +5,7 @@
     {
         private string mMemberName;
 
-        public DefaultMemberAttribute(string memberName) { mMemberName = memberName; }
+        public DefaultMemberAttribute(string pMemberName) { mMemberName = pMemberName; }
 
         public string MemberName { get { return mMemberName; } }
     }

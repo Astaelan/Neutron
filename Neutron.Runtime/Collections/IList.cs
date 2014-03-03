@@ -4,13 +4,13 @@
     {
         bool IsFixedSize { get; }
         bool IsReadOnly { get; }
-        object this[int index] { get; set; }
-        int Add(object value);
+        object this[int pIndex] { get; set; }
+        int Add(object pValue);
         void Clear();
-        bool Contains(object value);
-        int IndexOf(object value);
-        void Insert(int index, object value);
-        void Remove(object value);
-        void RemoveAt(int index);
+        bool Contains(object pValue);
+        int IndexOf(object pValue);
+        void Insert(int pIndex, object pValue);
+        void Remove(object pValue);
+        void RemoveAt(int pIndex);
     }
 }

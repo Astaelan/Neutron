@@ -2,6 +2,6 @@
 {
     public interface IEquatable<T>
     {
-        bool Equals(T x);
+        bool Equals(T pValue);
     }
 }

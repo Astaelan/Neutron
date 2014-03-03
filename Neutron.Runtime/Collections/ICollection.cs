@@ -5,6 +5,6 @@
         int Count { get; }
         bool IsSynchronized { get; }
         object SyncRoot { get; }
-        void CopyTo(Array array, int index);
+        void CopyTo(Array pArray, int pIndex);
     }
 }

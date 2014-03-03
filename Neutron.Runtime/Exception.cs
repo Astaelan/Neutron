@@ -2,17 +2,17 @@
 {
     public class Exception
     {
-        private Exception mInnerException;
         private string mMessage;
+        private Exception mInnerException;
 
         public Exception() { }
 
-        public Exception(string message) { mMessage = message; }
+        public Exception(string pMessage) { mMessage = pMessage; }
 
-        public Exception(string message, Exception innerException)
+        public Exception(string pMessage, Exception pInnerException)
         {
-            mInnerException = innerException;
-            mMessage = message;
+            mMessage = pMessage;
+            mInnerException = pInnerException;
         }
 
         public virtual string Message { get { return mMessage; } }

@@ -33,6 +33,17 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="ArgumentNullException.cs" />
+    <Compile Include="Runtime\InteropServices\LayoutKind.cs" />
+    <Compile Include="Runtime\InteropServices\StructLayoutAttribute.cs" />
+    <Compile Include="TypedReference.cs" />
+    <Compile Include="NotSupportedException.cs" />
+    <Compile Include="InvalidOperationException.cs" />
+    <Compile Include="ArgumentOutOfRangeException.cs" />
+    <Compile Include="CharEnumerator.cs" />
+    <Compile Include="Runtime\CompilerServices\IndexerNameAttribute.cs" />
+    <Compile Include="SystemException.cs" />
+    <Compile Include="ArgumentException.cs" />
     <Compile Include="MulticastDelegate.cs" />
     <Compile Include="ParamArrayAttribute.cs" />
     <Compile Include="Attribute.cs" />
@@ -48,6 +59,7 @@
     <Compile Include="Reflection\MemberInfo.cs" />
     <Compile Include="String.cs" />
     <Compile Include="Delegate.cs" />
+    <Compile Include="Environment.cs" />
     <Compile Include="Void.cs" />
     <Compile Include="RuntimeMethodHandle.cs" />
     <Compile Include="RuntimeFieldHandle.cs" />
@@ -82,9 +94,6 @@
     <Compile Include="Object.cs" />
     <Compile Include="Runtime\CompilerServices\MethodImplAttribute.cs" />
     <Compile Include="Runtime\CompilerServices\MethodImplOptions.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Reference Include="System" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

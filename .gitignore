@@ -1,6 +1,7 @@
 bin
 obj
 *.7z
+*.dll
 *.exe
 *.ll
 *.o

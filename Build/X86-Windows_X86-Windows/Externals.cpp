@@ -6,12 +6,16 @@
 extern "C" {
 #pragma pack(push)
 #pragma pack(1)
-	struct SystemString
+    struct SystemObject
+    {
+		void* mReserved;
+	};
+
+	struct SystemString : public SystemObject
 	{
-		void* Reserved;
-		int32_t ArrayLength;
-		int32_t StringLength;
-		int16_t FirstChar;
+		int32_t mArrayLength;
+		int32_t mStringLength;
+		int16_t mFirstChar;
 	};
 #pragma pack(pop)
 
@@ -35,10 +39,10 @@ void __cdecl F_204310C5649413C5(SystemString** _this, int16_t* value)    // Syst
 	int32_t stringLength = 0;
 	while (value[stringLength]) ++stringLength;
 	GCAllocate((void**)_this, sizeof(SystemString) + (stringLength << 1));
-	(*_this)->Reserved = NULL;
-	(*_this)->ArrayLength = stringLength + 1;
-	(*_this)->StringLength = stringLength;
-	int16_t* chars = &(*_this)->FirstChar;
+	(*_this)->mReserved = NULL;
+	(*_this)->mArrayLength = stringLength + 1;
+	(*_this)->mStringLength = stringLength;
+	int16_t* chars = &(*_this)->mFirstChar;
 	for (int32_t index = 0; index < stringLength; ++index)
 		chars[index] = value[index];
 	chars[stringLength] = 0;
@@ -47,10 +51,10 @@ void __cdecl F_204310C5649413C5(SystemString** _this, int16_t* value)    // Syst
 void __cdecl F_164E479A86BE82E3(SystemString** _this, int16_t c, int32_t count)    // System.Void System.String..ctor(System.Char, System.Int32)
 {
 	GCAllocate((void**)_this, sizeof(SystemString) + (count << 1));
-	(*_this)->Reserved = NULL;
-	(*_this)->ArrayLength = count + 1;
-	(*_this)->StringLength = count;
-	int16_t* chars = &(*_this)->FirstChar;
+	(*_this)->mReserved = NULL;
+	(*_this)->mArrayLength = count + 1;
+	(*_this)->mStringLength = count;
+	int16_t* chars = &(*_this)->mFirstChar;
 	for (int32_t index = 0; index < count; ++index)
 		chars[index] = c;
 	chars[count] = 0;
@@ -58,12 +62,12 @@ void __cdecl F_164E479A86BE82E3(SystemString** _this, int16_t c, int32_t count) 
 
 int32_t __cdecl F_5DB28D7B95C5BF0F(SystemString* _this)    // System.Int32 System.String.Length.get()
 {
-	return _this->StringLength;
+	return _this->mStringLength;
 }
 
 
 
 void __cdecl F_88DF95E6873B512C(SystemString* str)    // System.Void Neutron.Test.Program.ConsoleWrite(System.String str)
 {
-	wprintf((wchar_t*)&str->FirstChar);
+	wprintf((wchar_t*)&str->mFirstChar);
 }
