@@ -136,6 +136,7 @@
     <Compile Include="Locations\HLInt16LiteralLocation.cs" />
     <Compile Include="Locations\HLInt64LiteralLocation.cs" />
     <Compile Include="Locations\HLArrayLengthLocation.cs" />
+    <Compile Include="Locations\HLIndirectAddressLocation.cs" />
     <Compile Include="Locations\HLUInt8LiteralLocation.cs" />
     <Compile Include="Locations\HLUInt16LiteralLocation.cs" />
     <Compile Include="Locations\HLUInt64LiteralLocation.cs" />

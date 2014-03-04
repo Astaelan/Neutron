@@ -42,6 +42,10 @@ namespace Neutron.HLIR.Locations
 
         internal override LLLocation Load(LLFunction pFunction)
         {
+            //LLLocation locationFieldPointer = LoadInstanceFieldPointer(pFunction, mInstance, mField);
+            //LLLocation locationTemporary = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationFieldPointer.Type.PointerDepthMinusOne));
+            //pFunction.CurrentBlock.EmitLoad(locationTemporary, locationFieldPointer);
+            //return locationTemporary;
             return LoadInstanceFieldPointer(pFunction, Instance, Field);
         }
     }

@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Neutron.LLIR;
+using Neutron.LLIR.Locations;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,5 +25,20 @@ namespace Neutron.HLIR.Instructions
         private HLBitwiseXorInstruction(HLMethod pMethod) : base(pMethod) { }
 
         public override string ToString() { return string.Format("{0} = {1} ^ {2}", mDestination, mLeftOperandSource, mRightOperandSource); }
+
+        internal override void Transform(LLFunction pFunction)
+        {
+            LLLocation locationLeftOperand = mLeftOperandSource.Load(pFunction);
+            LLLocation locationRightOperand = mRightOperandSource.Load(pFunction);
+
+            LLType typeOperands = LLModule.BinaryResult(locationLeftOperand.Type, locationRightOperand.Type);
+            locationLeftOperand = pFunction.CurrentBlock.EmitConversion(locationLeftOperand, typeOperands);
+            locationRightOperand = pFunction.CurrentBlock.EmitConversion(locationRightOperand, typeOperands);
+
+            LLLocation locationTemporary = LLTemporaryLocation.Create(pFunction.CreateTemporary(typeOperands));
+            pFunction.CurrentBlock.EmitXor(locationTemporary, locationLeftOperand, locationRightOperand);
+
+            mDestination.Store(pFunction, locationTemporary);
+        }
     }
 }

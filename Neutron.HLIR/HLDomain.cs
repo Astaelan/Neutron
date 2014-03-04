@@ -119,7 +119,7 @@ namespace Neutron.HLIR
             type.Name = pDefinition.ToString(); // TODO: Don't really like this, should use TypeHelper perhaps?
             type.Signature = HLDomain.GetTypeSignature(pDefinition);
             sTypes[type.Signature] = type;
-
+            
             ITypeReference referenceBase = pDefinition.BaseClasses.FirstOrDefault();
             if (referenceBase != null)
             {
@@ -243,12 +243,16 @@ namespace Neutron.HLIR
             sLocals[local.Signature] = local;
 
             //local.Container = GetOrCreateMethod(pDefinition.MethodDefinition);
-
-            local.Type = GetOrCreateType(pDefinition.Type);
+            ITypeReference type = pDefinition.Type;
+            if (pDefinition.IsReference) type = MutableModelHelper.GetManagedPointerTypeReference(type, Host.InternFactory, type);
+            local.IsReference = pDefinition.IsReference;
+            local.Type = GetOrCreateType(type);
             return local;
         }
         private static string GetLocalSignature(ILocalDefinition pDefinition)
         {
+            // TODO: if pDefinition.IsReference
+            
             string signatureContainer = GetMethodSignature(pDefinition.MethodDefinition);
             return signatureContainer + "|" + pDefinition.ToString();
         }

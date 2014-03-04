@@ -241,14 +241,18 @@ namespace Neutron.LLIR
             if (pLeftType.Primitive == LLPrimitive.Array || pRightType.Primitive == LLPrimitive.Array) throw new NotSupportedException();
             if (pLeftType.Primitive == LLPrimitive.Structure || pRightType.Primitive == LLPrimitive.Structure) throw new NotSupportedException();
 
+            if (pLeftType.Primitive == LLPrimitive.Pointer && pRightType.Primitive == LLPrimitive.Pointer) return GetOrCreateSignedType(PointerSizeInBits);
+
             if (pLeftType == pRightType) return pLeftType;
-            // u1, i8, u8, i16, u16, i32, u32, i64, u64, f32, f64, ptr
-            if (pLeftType.Primitive == LLPrimitive.Pointer) return pLeftType;
-            if (pRightType.Primitive == LLPrimitive.Pointer) return pRightType;
-            // u1, i8, u8, i16, u16, i32, u32, i64, u64, f32, f64
+            // u1, i8, u8, i16, u16, i32, u32, i64, u64, ptr, f32, f64
             if (pLeftType.Primitive == LLPrimitive.Float && pRightType.Primitive == LLPrimitive.Float) return pLeftType.SizeInBits >= pRightType.SizeInBits ? pLeftType : pRightType;
             if (pLeftType.Primitive == LLPrimitive.Float) return pLeftType;
             if (pRightType.Primitive == LLPrimitive.Float) return pRightType;
+            // u1, i8, u8, i16, u16, i32, u32, i64, u64, ptr
+            if (pLeftType.Primitive == LLPrimitive.Pointer && pRightType.SizeInBits <= PointerSizeInBits) return GetOrCreateSignedType(PointerSizeInBits);
+            if (pLeftType.Primitive == LLPrimitive.Pointer && pRightType.SizeInBits > PointerSizeInBits) return GetOrCreateSignedType(pRightType.SizeInBits);
+            if (pRightType.Primitive == LLPrimitive.Pointer && pLeftType.SizeInBits <= PointerSizeInBits) return GetOrCreateSignedType(PointerSizeInBits);
+            if (pRightType.Primitive == LLPrimitive.Pointer && pLeftType.SizeInBits > PointerSizeInBits) return GetOrCreateSignedType(pLeftType.SizeInBits);
             // u1, i8, u8, i16, u16, i32, u32, i64, u64
             if (pLeftType.SizeInBits > pRightType.SizeInBits) return pLeftType;
             if (pRightType.SizeInBits > pLeftType.SizeInBits) return pRightType;

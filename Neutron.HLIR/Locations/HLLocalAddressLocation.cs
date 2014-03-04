@@ -22,11 +22,17 @@ namespace Neutron.HLIR.Locations
         private HLLocal mLocal = null;
         public HLLocal Local { get { return mLocal; } }
 
-        public override string ToString() { return string.Format("({0})&{1}", Type, mLocal); }
+        public override string ToString()
+        {
+            return string.Format("({0}){1}{2}", Type, mLocal.IsReference ? "" : "&", mLocal);
+        }
 
         internal override LLLocation Load(LLFunction pFunction)
         {
-            return LLLocalLocation.Create(pFunction.Locals[Local.Name]);
+            LLLocation location = LLLocalLocation.Create(pFunction.Locals[Local.Name]);
+            if (mLocal.IsReference)
+                location = location.Load(pFunction.CurrentBlock);
+            return location;
         }
     }
 }

@@ -28,9 +28,10 @@ namespace Neutron.Test
             //ConsoleWrite(s);
             //TestX x = new TestX();
             //return x.Test(s.Length);
-
-            ConsoleWrite("Hello World!");
-            return 42;
+            string x = "Hello ";
+            string y = x + "World!";
+            ConsoleWrite(y);
+            return y.Length;
 
             //byte y = 42;
             //y++;

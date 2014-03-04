@@ -128,21 +128,23 @@ namespace Neutron.HLIR
             HLLocation locationCondition = ProcessExpression(pStatement.Condition);
             HLInstructionBlock blockParent = mCurrentBlock;
 
-            HLInstructionBlock blockTrue = CreateBlock(CreateLabel());
-            mCurrentBlock = blockTrue;
+            HLInstructionBlock blockTrueStart = CreateBlock(CreateLabel());
+            mCurrentBlock = blockTrueStart;
             ProcessStatement(pStatement.TrueBranch);
+            HLInstructionBlock blockTrueEnd = mCurrentBlock;
 
-            HLInstructionBlock blockFalse = CreateBlock(CreateLabel());
-            mCurrentBlock = blockFalse;
+            HLInstructionBlock blockFalseStart = CreateBlock(CreateLabel());
+            mCurrentBlock = blockFalseStart;
             ProcessStatement(pStatement.FalseBranch);
+            HLInstructionBlock blockFalseEnd = mCurrentBlock;
 
-            blockParent.EmitBranch(locationCondition, blockTrue.StartLabel, blockFalse.StartLabel);
+            blockParent.EmitBranch(locationCondition, blockTrueStart.StartLabel, blockFalseStart.StartLabel);
 
-            if (!blockTrue.Terminated || !blockFalse.Terminated)
+            if (!blockTrueEnd.Terminated || !blockFalseEnd.Terminated)
             {
                 mCurrentBlock = CreateBlock(CreateLabel());
-                blockTrue.Terminate(mCurrentBlock.StartLabel);
-                blockFalse.Terminate(mCurrentBlock.StartLabel);
+                blockTrueEnd.Terminate(mCurrentBlock.StartLabel);
+                blockFalseEnd.Terminate(mCurrentBlock.StartLabel);
             }
         }
 
@@ -248,6 +250,7 @@ namespace Neutron.HLIR
         {
             if (pExpression is IAddition) return ProcessAdditionExpression(pExpression as IAddition);
             if (pExpression is IAddressableExpression) return ProcessAddressableExpression(pExpression as IAddressableExpression);
+            if (pExpression is IAddressDereference) return ProcessAddressDereferenceExpression(pExpression as IAddressDereference);
             if (pExpression is IAddressOf) return ProcessAddressOfExpression(pExpression as IAddressOf);
             if (pExpression is IArrayIndexer) return ProcessArrayIndexerExpression(pExpression as IArrayIndexer);
             if (pExpression is IAssignment) return ProcessAssignmentExpression(pExpression as IAssignment);
@@ -264,6 +267,10 @@ namespace Neutron.HLIR
             if (pExpression is IDivision) return ProcessDivisionExpression(pExpression as IDivision);
             if (pExpression is IEquality) return ProcessEqualityExpression(pExpression as IEquality);
             if (pExpression is IExclusiveOr) return ProcessExclusiveOrExpression(pExpression as IExclusiveOr);
+            if (pExpression is IGreaterThan) return ProcessGreaterThanExpression(pExpression as IGreaterThan);
+            if (pExpression is IGreaterThanOrEqual) return ProcessGreaterThanOrEqualExpression(pExpression as IGreaterThanOrEqual);
+            if (pExpression is ILessThan) return ProcessLessThanExpression(pExpression as ILessThan);
+            if (pExpression is ILessThanOrEqual) return ProcessLessThanOrEqualExpression(pExpression as ILessThanOrEqual);
             if (pExpression is ILogicalNot) return ProcessLogicalNotExpression(pExpression as ILogicalNot);
             if (pExpression is IMethodCall) return ProcessMethodCallExpression(pExpression as IMethodCall);
             if (pExpression is IModulus) return ProcessModulusExpression(pExpression as IModulus);
@@ -321,6 +328,12 @@ namespace Neutron.HLIR
             throw new NotSupportedException();
         }
 
+        private HLLocation ProcessAddressDereferenceExpression(IAddressDereference pExpression)
+        {
+            HLLocation locationAddress = ProcessExpression(pExpression.Address);
+            return HLIndirectAddressLocation.Create(locationAddress, HLDomain.GetOrCreateType(pExpression.Type));
+        }
+
         private HLLocation ProcessAddressOfExpression(IAddressOf pExpression)
         {
             return ProcessExpression(pExpression.Expression).AddressOf();
@@ -364,7 +377,14 @@ namespace Neutron.HLIR
 
         private HLLocation ProcessBoundExpression(IBoundExpression pExpression)
         {
-            if (pExpression.Definition is ILocalDefinition) return HLLocalLocation.Create(HLDomain.GetLocal(pExpression.Definition as ILocalDefinition));
+            if (pExpression.Definition is ILocalDefinition)
+            {
+                ILocalDefinition definition = pExpression.Definition as ILocalDefinition;
+                HLLocation location = HLLocalLocation.Create(HLDomain.GetLocal(definition));
+                if (pExpression.Type.ResolvedType.TypeCode == PrimitiveTypeCode.Reference)
+                    location = location.AddressOf();
+                return location;
+            }
             else if (pExpression.Definition is IParameterDefinition) return HLParameterLocation.Create(HLDomain.GetParameter(pExpression.Definition as IParameterDefinition));
             else if (pExpression.Definition is IFieldDefinition || pExpression.Definition is IFieldReference)
             {
@@ -507,6 +527,42 @@ namespace Neutron.HLIR
             return pExpression.ResultIsUnmodifiedLeftOperand ? locationLeftOperand : locationTemporary;
         }
 
+        private HLLocation ProcessGreaterThanExpression(IGreaterThan pExpression)
+        {
+            HLLocation locationLeftOperand = ProcessExpression(pExpression.LeftOperand);
+            HLLocation locationRightOperand = ProcessExpression(pExpression.RightOperand);
+            HLLocation locationTemporary = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
+            mCurrentBlock.EmitCompare(HLCompareType.GreaterThan, locationTemporary, locationLeftOperand, locationRightOperand);
+            return pExpression.ResultIsUnmodifiedLeftOperand ? locationLeftOperand : locationTemporary;
+        }
+
+        private HLLocation ProcessGreaterThanOrEqualExpression(IGreaterThanOrEqual pExpression)
+        {
+            HLLocation locationLeftOperand = ProcessExpression(pExpression.LeftOperand);
+            HLLocation locationRightOperand = ProcessExpression(pExpression.RightOperand);
+            HLLocation locationTemporary = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
+            mCurrentBlock.EmitCompare(HLCompareType.GreaterThanOrEqual, locationTemporary, locationLeftOperand, locationRightOperand);
+            return pExpression.ResultIsUnmodifiedLeftOperand ? locationLeftOperand : locationTemporary;
+        }
+
+        private HLLocation ProcessLessThanExpression(ILessThan pExpression)
+        {
+            HLLocation locationLeftOperand = ProcessExpression(pExpression.LeftOperand);
+            HLLocation locationRightOperand = ProcessExpression(pExpression.RightOperand);
+            HLLocation locationTemporary = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
+            mCurrentBlock.EmitCompare(HLCompareType.LessThan, locationTemporary, locationLeftOperand, locationRightOperand);
+            return pExpression.ResultIsUnmodifiedLeftOperand ? locationLeftOperand : locationTemporary;
+        }
+
+        private HLLocation ProcessLessThanOrEqualExpression(ILessThanOrEqual pExpression)
+        {
+            HLLocation locationLeftOperand = ProcessExpression(pExpression.LeftOperand);
+            HLLocation locationRightOperand = ProcessExpression(pExpression.RightOperand);
+            HLLocation locationTemporary = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
+            mCurrentBlock.EmitCompare(HLCompareType.LessThanOrEqual, locationTemporary, locationLeftOperand, locationRightOperand);
+            return pExpression.ResultIsUnmodifiedLeftOperand ? locationLeftOperand : locationTemporary;
+        }
+
         private HLLocation ProcessLogicalNotExpression(ILogicalNot pExpression)
         {
             HLLocation locationOperand = ProcessExpression(pExpression.Operand);
@@ -597,6 +653,12 @@ namespace Neutron.HLIR
                 if (field.IsStatic) return HLStaticFieldLocation.Create(field);
                 HLLocation instance = ProcessExpression(pExpression.Instance);
                 return HLFieldLocation.Create(instance, field);
+            }
+            else if (pExpression.Definition is IAddressDereference)
+            {
+                IAddressDereference definition = pExpression.Definition as IAddressDereference;
+                HLLocation locationAddress = ProcessExpression(definition.Address);
+                return HLIndirectAddressLocation.Create(locationAddress, HLDomain.GetOrCreateType(pExpression.Type));
             }
             throw new NotSupportedException();
         }
