@@ -17,12 +17,15 @@ namespace Neutron.LLIR
 
         private LLType mType = null;
         private string mIdentifier = null;
+        private LLLiteral mInitialValue = null;
 
         private LLGlobal() { }
 
         public LLType Type { get { return mType; } }
 
         public string Identifier { get { return mIdentifier; } }
+
+        public LLLiteral InitialValue { get { return mInitialValue; } set { mInitialValue = value; } }
 
         public override string ToString() { return "@" + mIdentifier; }
     }

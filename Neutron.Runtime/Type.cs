@@ -9,5 +9,7 @@ namespace System
         public static extern Type GetTypeFromHandle(RuntimeTypeHandle pHandle);
 
         protected Type() { }
+
+        public abstract string Namespace { get; }
     }
 }

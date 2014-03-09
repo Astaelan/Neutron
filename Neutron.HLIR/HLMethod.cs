@@ -14,7 +14,15 @@ namespace Neutron.HLIR
 {
     public sealed class HLMethod
     {
-        internal HLMethod() { }
+        private static int sRuntimeMethodHandle = 0;
+
+        internal HLMethod()
+        {
+            mRuntimeMethodHandle = sRuntimeMethodHandle++;
+        }
+
+        private int mRuntimeMethodHandle = 0;
+        public int RuntimeMethodHandle { get { return mRuntimeMethodHandle; } }
 
         private IMethodDefinition mDefinition = null;
         public IMethodDefinition Definition { get { return mDefinition; } internal set { mDefinition = value; } }
@@ -33,6 +41,12 @@ namespace Neutron.HLIR
 
         private bool mIsExternal = false;
         public bool IsExternal { get { return mIsExternal; } internal set { mIsExternal = value; } }
+
+        private bool mIsAbstract = false;
+        public bool IsAbstract { get { return mIsAbstract; } internal set { mIsAbstract = value; } }
+
+        private bool mIsVirtual = false;
+        public bool IsVirtual { get { return mIsVirtual; } internal set { mIsVirtual = value; } }
 
         private bool mIsConstructor = false;
         public bool IsConstructor { get { return mIsConstructor; } internal set { mIsConstructor = value; } }
@@ -212,14 +226,15 @@ namespace Neutron.HLIR
             HLLocation locationCondition = ProcessExpression(pStatement.Expression);
             HLInstructionBlock blockParent = mCurrentBlock;
 
-            List<HLInstructionBlock> blocksCases = new List<HLInstructionBlock>();
+            List<HLInstructionBlock> blocksStarts = new List<HLInstructionBlock>();
+            List<HLInstructionBlock> blocksEnds = new List<HLInstructionBlock>();
             HLInstructionBlock blockDefaultCase = null;
             List<Tuple<HLLiteralLocation, HLLabel>> cases = new List<Tuple<HLLiteralLocation, HLLabel>>();
             foreach (ISwitchCase switchCase in pStatement.Cases)
             {
                 HLInstructionBlock blockCase = CreateBlock(CreateLabel());
                 mCurrentBlock = blockCase;
-                blocksCases.Add(blockCase);
+                blocksStarts.Add(blockCase);
                 if (switchCase.IsDefault) blockDefaultCase = blockCase;
                 else
                 {
@@ -228,20 +243,22 @@ namespace Neutron.HLIR
                 }
                 foreach (IStatement statementCase in switchCase.Body)
                     ProcessStatement(statementCase);
+                blocksEnds.Add(mCurrentBlock);
             }
             if (blockDefaultCase == null)
             {
                 blockDefaultCase = CreateBlock(CreateLabel());
                 mCurrentBlock = blockDefaultCase;
-                blocksCases.Add(blockDefaultCase);
+                blocksStarts.Add(blockDefaultCase);
+                blocksEnds.Add(blockDefaultCase);
             }
 
             blockParent.EmitSwitch(locationCondition, blockDefaultCase.StartLabel, cases);
 
-            if (!blocksCases.TrueForAll(b => b.Terminated))
+            if (!blocksEnds.TrueForAll(b => b.Terminated))
             {
                 mCurrentBlock = CreateBlock(CreateLabel());
-                blocksCases.ForEach(b => b.Terminate(mCurrentBlock.StartLabel));
+                blocksEnds.ForEach(b => b.Terminate(mCurrentBlock.StartLabel));
             }
         }
 
@@ -424,21 +441,23 @@ namespace Neutron.HLIR
 
             HLLocation locationResult = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
 
-            HLInstructionBlock blockTrue = CreateBlock(CreateLabel());
-            mCurrentBlock = blockTrue;
+            HLInstructionBlock blockTrueStart = CreateBlock(CreateLabel());
+            mCurrentBlock = blockTrueStart;
             HLLocation locationTrue = ProcessExpression(pExpression.ResultIfTrue);
             mCurrentBlock.EmitAssignment(locationResult, locationTrue);
+            HLInstructionBlock blockTrueEnd = mCurrentBlock;
 
-            HLInstructionBlock blockFalse = CreateBlock(CreateLabel());
-            mCurrentBlock = blockFalse;
+            HLInstructionBlock blockFalseStart = CreateBlock(CreateLabel());
+            mCurrentBlock = blockFalseStart;
             HLLocation locationFalse = ProcessExpression(pExpression.ResultIfFalse);
             mCurrentBlock.EmitAssignment(locationResult, locationFalse);
+            HLInstructionBlock blockFalseEnd = mCurrentBlock;
 
-            blockParent.EmitBranch(locationCondition, blockTrue.StartLabel, blockFalse.StartLabel);
+            blockParent.EmitBranch(locationCondition, blockTrueStart.StartLabel, blockFalseStart.StartLabel);
 
             mCurrentBlock = CreateBlock(CreateLabel());
-            blockTrue.Terminate(mCurrentBlock.StartLabel);
-            blockFalse.Terminate(mCurrentBlock.StartLabel);
+            blockTrueEnd.Terminate(mCurrentBlock.StartLabel);
+            blockFalseEnd.Terminate(mCurrentBlock.StartLabel);
 
             return locationResult;
         }
@@ -491,7 +510,7 @@ namespace Neutron.HLIR
             foreach (IExpression argument in pExpression.Arguments)
                 locationsParameters.Add(ProcessExpression(argument));
 
-            mCurrentBlock.EmitCall(methodCalled, null, locationsParameters);
+            mCurrentBlock.EmitCall(methodCalled, false, null, locationsParameters);
             return locationThis;
         }
 
@@ -583,7 +602,7 @@ namespace Neutron.HLIR
             HLMethod methodCalled = HLDomain.GetOrCreateMethod(pExpression.MethodToCall);
             if (methodCalled.ReturnType.Definition.TypeCode != PrimitiveTypeCode.Void)
                 locationReturn = HLTemporaryLocation.Create(CreateTemporary(methodCalled.ReturnType));
-            mCurrentBlock.EmitCall(methodCalled, locationReturn, locationsParameters);
+            mCurrentBlock.EmitCall(methodCalled, pExpression.IsVirtualCall, locationReturn, locationsParameters);
             return locationReturn;
         }
 
@@ -690,23 +709,43 @@ namespace Neutron.HLIR
 
 
         private LLFunction mLLFunction = null;
-        internal LLFunction LLFunction { get { return mLLFunction; } set { mLLFunction = value; } }
+        internal LLFunction LLFunction { get { return mLLFunction; } }
+
+        internal void BuildFunction()
+        {
+            // DONE: Convert HLMethods to LLFunctions
+            List<LLParameter> parameters = new List<LLParameter>();
+            foreach (HLParameter parameter in Parameters)
+            {
+                LLType typeParameter = parameter.Type.LLType;
+                // DONE: Adjust first parameter for string constructors to additional pointer depth plus one
+                if (parameter == Parameters.First() && Container == HLDomain.SystemString && !IsStatic && IsConstructor)
+                    typeParameter = typeParameter.PointerDepthPlusOne;
+                parameters.Add(LLParameter.Create(typeParameter, parameter.Name));
+            }
+            bool entryFunction = HLDomain.EntryMethod == this;
+            mLLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (Container.ToString() + "." + ToString()), entryFunction, IsExternal, IsAbstract, ReturnType.LLType, parameters);
+            LLFunction.Description = Signature;
+            foreach (HLParameter parameter in Parameters.Where(p => p.RequiresAddressing)) parameter.AddressableLocal = LLFunction.CreateLocal(parameter.Type.LLType, "local_" + parameter.Name);
+            foreach (HLLocal local in Locals) LLFunction.CreateLocal(local.Type.LLType, local.Name);
+            foreach (HLTemporary temporary in Temporaries) LLFunction.CreateLocal(temporary.Type.LLType, temporary.Name);
+        }
 
         internal void Transform()
         {
             Labels.ForEach(l => LLFunction.CreateLabel(l.Identifier));
 
-            foreach (HLInstructionBlock blockHL in Blocks)
+            foreach (HLInstructionBlock hl in Blocks)
             {
-                LLInstructionBlock blockLL = LLFunction.CreateBlock(LLFunction.Labels.GetByIdentifier(blockHL.StartLabel.Identifier));
-                LLFunction.CurrentBlock = blockLL;
-                if (blockHL == Blocks.First())
+                LLInstructionBlock ll = LLFunction.CreateBlock(LLFunction.Labels.GetByIdentifier(hl.StartLabel.Identifier));
+                LLFunction.CurrentBlock = ll;
+                if (hl == Blocks.First())
                 {
                     foreach (HLParameter parameter in Parameters.Where(p => p.RequiresAddressing))
                         LLFunction.CurrentBlock.EmitStore(LLLocalLocation.Create(parameter.AddressableLocal), LLParameterLocation.Create(LLFunction.Parameters[parameter.Name]));
                 }
 
-                blockHL.Instructions.ForEach(i => i.Transform(LLFunction));
+                hl.Instructions.ForEach(i => i.Transform(LLFunction));
             }
         }
     }

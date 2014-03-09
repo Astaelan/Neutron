@@ -55,7 +55,7 @@ namespace Neutron.HLIR
         public void EmitBitwiseOr(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLBitwiseOrInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }
         public void EmitBitwiseXor(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLBitwiseXorInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }
         public void EmitBranch(HLLocation pConditionSource, HLLabel pTrueLabel, HLLabel pFalseLabel) { Emit(HLBranchInstruction.Create(mMethod, pConditionSource, pTrueLabel, pFalseLabel)); }
-        public void EmitCall(HLMethod pCalledMethod, HLLocation pReturnDestination, List<HLLocation> pParameterSources) { Emit(HLCallInstruction.Create(mMethod, pCalledMethod, pReturnDestination, pParameterSources)); }
+        public void EmitCall(HLMethod pCalledMethod, bool pVirtual, HLLocation pReturnDestination, List<HLLocation> pParameterSources) { Emit(HLCallInstruction.Create(mMethod, pCalledMethod, pVirtual, pReturnDestination, pParameterSources)); }
         public void EmitCompare(HLCompareType pCompareType, HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLCompareInstruction.Create(mMethod, pCompareType, pDestination, pLeftOperandSource, pRightOperandSource)); }
         public void EmitDivide(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLDivideInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }
         public void EmitGoto(HLLabel pTargetLabel) { Emit(HLGotoInstruction.Create(mMethod, pTargetLabel)); }

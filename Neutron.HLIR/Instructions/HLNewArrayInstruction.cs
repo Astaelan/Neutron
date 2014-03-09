@@ -50,6 +50,8 @@ namespace Neutron.HLIR.Instructions
             pFunction.CurrentBlock.EmitAdd(locationTotalSize, locationElementsSize, LLLiteralLocation.Create(LLLiteral.Create(locationSize.Type, (HLDomain.SizeOfPointer + 4).ToString())));
             locationTotalSize = pFunction.CurrentBlock.EmitConversion(locationTotalSize, HLDomain.GCAllocFunction.Parameters[1].Type);
 
+            //LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocFunction.Parameters[2].Type, 
+
             parameters.Clear();
             parameters.Add(locationArrayReference);
             parameters.Add(locationTotalSize);

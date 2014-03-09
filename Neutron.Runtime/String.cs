@@ -9,7 +9,7 @@ namespace System
         public static readonly string Empty = "";
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static unsafe extern string InternalAllocate(int pLength);
+        private static unsafe extern void InternalAllocate(ref string pString, int pLength);
 
         public static bool IsNullOrEmpty(string pValue) { return (pValue == null) || (pValue.mStringLength == 0); }
 
@@ -57,7 +57,8 @@ namespace System
         {
             int aLength = pStringA.mStringLength;
             int bLength = pStringB.mStringLength;
-            string str = InternalAllocate(aLength + bLength);
+            string str = null;
+            InternalAllocate(ref str, aLength + bLength);
             fixed (char* strChars = &str.mFirstChar)
             {
                 fixed (char* aChars = &pStringA.mFirstChar)
@@ -109,7 +110,8 @@ namespace System
                 if (!IsNullOrEmpty(pStrings[index]))
                     totalLength += pStrings[index].mStringLength;
             }
-            string str = InternalAllocate(totalLength);
+            string str = null;
+            InternalAllocate(ref str, totalLength);
             fixed (char* strChars = &str.mFirstChar)
             {
                 int offset = 0;
@@ -134,7 +136,11 @@ namespace System
         private char mFirstChar;
 
         [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe extern String(sbyte* pValue);
+        [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe extern String(char* pValue);
+        [MethodImpl(MethodImplOptions.InternalCall)]
+        public unsafe extern String(sbyte* pValue, int pIndex, int pLength);
         [MethodImpl(MethodImplOptions.InternalCall)]
         public unsafe extern String(char* pValue, int pIndex, int pLength);
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -207,7 +213,8 @@ namespace System
         private unsafe string InternalSubstring(int pStartIndex, int pLength, bool pAlwaysCopy)
         {
             if (pStartIndex == 0 && pLength == mStringLength && !pAlwaysCopy) return this;
-            string str = InternalAllocate(pLength);
+            string str = null;
+            InternalAllocate(ref str, pLength);
             fixed (char* thisChars = &mFirstChar)
             {
                 fixed (char* strChars = &str.mFirstChar)

@@ -31,7 +31,8 @@ namespace Neutron.HLIR.Locations
         internal static LLLocation LoadInstanceFieldPointer(LLFunction pFunction, HLLocation pInstance, HLField pField)
         {
             LLLocation locationInstance = pInstance.Load(pFunction);
-            LLLocation locationFieldPointer = pFunction.CurrentBlock.EmitConversion(locationInstance, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1));
+            locationInstance = pFunction.CurrentBlock.EmitConversion(locationInstance, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1));
+            LLLocation locationFieldPointer = locationInstance;
             if (pField.Offset > 0)
             {
                 locationFieldPointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationFieldPointer.Type));

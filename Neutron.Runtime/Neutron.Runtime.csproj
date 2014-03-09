@@ -34,6 +34,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="ArgumentNullException.cs" />
+    <Compile Include="RuntimeMethodData.cs" />
+    <Compile Include="RuntimeTypeData.cs" />
     <Compile Include="Runtime\InteropServices\LayoutKind.cs" />
     <Compile Include="Runtime\InteropServices\StructLayoutAttribute.cs" />
     <Compile Include="TypedReference.cs" />

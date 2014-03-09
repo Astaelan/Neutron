@@ -121,9 +121,64 @@ namespace Neutron.LLIR
                         sb.Append(")");
                         return sb.ToString();
                     }
-                case LLPrimitive.Vector: return "<" + mElementCount + " x " + mElementType.ToString() + ">";
-                case LLPrimitive.Array: return "[" + mElementCount + " x " + mElementType.ToString() + "]";
+                case LLPrimitive.Vector: return "< " + mElementCount + " x " + mElementType.ToString() + " >";
+                case LLPrimitive.Array: return "[ " + mElementCount + " x " + mElementType.ToString() + " ]";
                 case LLPrimitive.Structure: return "%" + mStructureName;
+                default: throw new NotSupportedException();
+            }
+        }
+
+        public LLLiteral ToLiteral(params string[] pValues)
+        {
+            switch (mPrimitive)
+            {
+                case LLPrimitive.Signed:
+                case LLPrimitive.Unsigned:
+                case LLPrimitive.Float:
+                case LLPrimitive.Pointer:
+                    if (pValues.Length != 1) throw new ArgumentOutOfRangeException();
+                    return LLLiteral.Create(this, pValues[0]);
+                case LLPrimitive.Vector:
+                    {
+                        if (pValues.Length != mElementCount) throw new ArgumentOutOfRangeException();
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append("< ");
+                        for (int index = 0; index < mElementCount; ++index)
+                        {
+                            if (index > 0) sb.Append(", ");
+                            sb.AppendFormat("{0} {1}", mElementType.ToString(), pValues[index]);
+                        }
+                        sb.Append(" >");
+                        return LLLiteral.Create(this, sb.ToString());
+                    }
+                case LLPrimitive.Array:
+                    {
+                        if (pValues.Length != mElementCount) throw new ArgumentOutOfRangeException();
+                        StringBuilder sb = new StringBuilder();
+                        sb.Append("[ ");
+                        for (int index = 0; index < mElementCount; ++index)
+                        {
+                            if (index > 0) sb.Append(", ");
+                            sb.AppendFormat("{0} {1}", mElementType.ToString(), pValues[index]);
+                        }
+                        sb.AppendFormat(" ]");
+                        return LLLiteral.Create(this, sb.ToString());
+                    }
+                case LLPrimitive.Structure:
+                    {
+                        if (pValues.Length != mStructureFields.Count) throw new ArgumentOutOfRangeException();
+                        StringBuilder sb = new StringBuilder();
+                        if (mStructurePacked) sb.Append("<");
+                        sb.Append("{ ");
+                        for (int index = 0; index < mStructureFields.Count; ++index)
+                        {
+                            if (index > 0) sb.Append(", ");
+                            sb.AppendFormat("{0} {1}", mStructureFields[index], pValues[index]);
+                        }
+                        sb.Append(" }");
+                        if (mStructurePacked) sb.Append(">");
+                        return LLLiteral.Create(this, sb.ToString());
+                    }
                 default: throw new NotSupportedException();
             }
         }

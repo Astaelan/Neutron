@@ -5,6 +5,9 @@ namespace System
     public class Object
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
+        private static extern RuntimeTypeHandle InternalGetRuntimeTypeHandle(object pObject);
+
+        [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern bool InternalEquals(object pObjectA, object pObjectB);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
@@ -17,8 +20,7 @@ namespace System
         public Object() { }
         ~Object() { }
 
-        [MethodImpl(MethodImplOptions.InternalCall)]
-        public extern Type GetType();
+        public Type GetType() { return new RuntimeType(InternalGetRuntimeTypeHandle(this)); }
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         protected extern object MemberwiseClone();

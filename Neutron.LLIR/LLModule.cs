@@ -191,12 +191,13 @@ namespace Neutron.LLIR
                 sb.AppendFormat(":{0}", parameter.Type);
             return sb.ToString();
         }
-        private static LLFunction CreateFunction(string pName, bool pExplicitName, bool pExternal, LLType pReturnType, List<LLParameter> pParameters)
+        private static LLFunction CreateFunction(string pName, bool pExplicitName, bool pExternal, bool pAbstract, LLType pReturnType, List<LLParameter> pParameters)
         {
             LLFunction function = new LLFunction();
             function.Name = pName;
             function.ExplicitName = pExplicitName;
             function.External = pExternal;
+            function.Abstract = pAbstract;
             function.Identifier = LLModule.GetFunctionIdentifier(pName, pReturnType, pParameters);
             function.IdentifierHash = "F_" + BitConverter.ToString(SHA256.Create().ComputeHash(Encoding.ASCII.GetBytes(function.Identifier))).Replace("-", "").ToUpper().Substring(0, 16);
             function.ReturnType = pReturnType;
@@ -204,11 +205,11 @@ namespace Neutron.LLIR
             sFunctions[function.Identifier] = function;
             return function;
         }
-        public static LLFunction GetOrCreateFunction(string pName, bool pExplicitName, bool pExternal, LLType pReturnType, List<LLParameter> pParameters)
+        public static LLFunction GetOrCreateFunction(string pName, bool pExplicitName, bool pExternal, bool pAbstract, LLType pReturnType, List<LLParameter> pParameters)
         {
             LLFunction function = null;
             string identifier = GetFunctionIdentifier(pName, pReturnType, pParameters);
-            if (!sFunctions.TryGetValue(identifier, out function)) function = CreateFunction(pName, pExplicitName, pExternal, pReturnType, pParameters);
+            if (!sFunctions.TryGetValue(identifier, out function)) function = CreateFunction(pName, pExplicitName, pExternal, pAbstract, pReturnType, pParameters);
             return function;
         }
         public static LLFunction GetFunction(string pIdentifier)
@@ -266,10 +267,6 @@ namespace Neutron.LLIR
 
         public static void Dump(StreamWriter pWriter)
         {
-            foreach (LLGlobal global in sGlobals.Values)
-                pWriter.WriteLine("{0} = global {1} zeroinitializer", global, global.Type.PointerDepthMinusOne);
-            if (sGlobals.Count > 0) pWriter.WriteLine();
-
             List<LLType> typesStructure = sTypes.Values.Where(t => t.Primitive == LLPrimitive.Structure).ToList();
             foreach (LLType type in typesStructure)
             {
@@ -283,7 +280,17 @@ namespace Neutron.LLIR
             }
             if (typesStructure.Count > 0) pWriter.WriteLine();
 
-            List<LLFunction> functionsExternal = sFunctions.Values.Where(f => f.External).ToList();
+            List<LLGlobal> globalsConstant = sGlobals.Values.Where(g => g.InitialValue != null).ToList();
+            foreach (LLGlobal global in globalsConstant)
+                pWriter.WriteLine("{0} = constant {1} {2}", global, global.Type.PointerDepthMinusOne, global.InitialValue.ToString());
+            if (globalsConstant.Count > 0) pWriter.WriteLine();
+
+            List<LLGlobal> globalsVariable = sGlobals.Values.Where(g => g.InitialValue == null).ToList();
+            foreach (LLGlobal global in globalsVariable)
+                pWriter.WriteLine("{0} = global {1} zeroinitializer", global, global.Type.PointerDepthMinusOne);
+            if (globalsConstant.Count > 0) pWriter.WriteLine();
+
+            List<LLFunction> functionsExternal = sFunctions.Values.Where(f => f.External && !f.Abstract).ToList();
             foreach (LLFunction function in functionsExternal)
             {
                 pWriter.Write("declare {0}", function.Declaration);

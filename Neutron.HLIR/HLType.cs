@@ -44,6 +44,18 @@ namespace Neutron.HLIR
         private HLMethod mStaticConstructor = null;
         public HLMethod StaticConstructor { get { return mStaticConstructor; } internal set { mStaticConstructor = value; } }
 
+        private Dictionary<HLMethod, HLMethod> mVirtualMap = new Dictionary<HLMethod, HLMethod>();
+        public Dictionary<HLMethod, HLMethod> VirtualMap { get { return mVirtualMap; } }
+
+        private bool mVirtualTableBuilt = false;
+        public bool VirtualTableBuilt { get { return mVirtualTableBuilt; } }
+
+        private List<HLMethod> mVirtualTable = new List<HLMethod>();
+        public List<HLMethod> VirtualTable { get { return mVirtualTable; } }
+
+        private Dictionary<HLMethod, int> mVirtualLookup = new Dictionary<HLMethod, int>();
+        public Dictionary<HLMethod, int> VirtualLookup { get { return mVirtualLookup; } }
+
         public int CalculatedSize
         {
             get
@@ -92,6 +104,53 @@ namespace Neutron.HLIR
             }
         }
 
+        internal void MapVirtualMethods()
+        {
+            if (BaseType != null)
+            {
+                BaseType.MapVirtualMethods();
+                foreach (KeyValuePair<HLMethod, HLMethod> kv in BaseType.VirtualMap)
+                    VirtualMap[kv.Key] = kv.Value;
+            }
+            foreach (HLMethod method in VirtualMap.Keys.ToList())
+            {
+                IMethodDefinition definition = TypeHelper.GetMethod(Definition, method.Definition, true);
+                if (definition != Dummy.MethodDefinition)
+                    VirtualMap[method] = HLDomain.GetOrCreateMethod(definition);
+            }
+            List<HLMethod> methodsVirtuals = Methods.FindAll(m => m.IsVirtual);
+            foreach (HLMethod method in methodsVirtuals)
+            {
+                IMethodDefinition definition = TypeHelper.GetMethod(Definition, method.Definition, true);
+                if (definition == Dummy.MethodDefinition) VirtualMap[method] = method;
+                else VirtualMap[method] = HLDomain.GetOrCreateMethod(definition);
+            }
+        }
+
+        internal void BuildVirtualTable()
+        {
+            if (VirtualTableBuilt) return;
+            mVirtualTableBuilt = true;
+            if (BaseType != null)
+            {
+                BaseType.BuildVirtualTable();
+                VirtualTable.AddRange(BaseType.VirtualTable);
+                foreach (KeyValuePair<HLMethod, int> kv in BaseType.VirtualLookup)
+                    VirtualLookup.Add(kv.Key, kv.Value);
+                foreach (KeyValuePair<HLMethod, HLMethod> kv in VirtualMap.Where(p => p.Key.Container != this))
+                {
+                    int index = VirtualLookup[kv.Key];
+                    VirtualTable[index] = kv.Value;
+                }
+            }
+            foreach (KeyValuePair<HLMethod, HLMethod> kv in VirtualMap.Where(p => p.Key.Container == this))
+            {
+                int index = VirtualTable.Count;
+                VirtualTable.Add(kv.Value);
+                VirtualLookup.Add(kv.Key, index);
+            }
+        }
+
 
         public LLType LLType
         {
@@ -117,13 +176,13 @@ namespace Neutron.HLIR
                             IPointerType definitionPointer = Definition as IPointerType;
                             HLType typePointerTarget = HLDomain.GetOrCreateType(definitionPointer.TargetType);
                             if (typePointerTarget == HLDomain.SystemVoid) typePointerTarget = HLDomain.SystemByte;
-                            return LLModule.GetOrCreatePointerType(typePointerTarget.LLType, 1);
+                            return typePointerTarget.LLType.PointerDepthPlusOne;
                         }
                     case PrimitiveTypeCode.Reference:
                         {
                             IManagedPointerType definitionReference = Definition as IManagedPointerType;
                             HLType typeReferenceTarget = HLDomain.GetOrCreateType(definitionReference.TargetType);
-                            return LLModule.GetOrCreatePointerType(typeReferenceTarget.LLType, 1);
+                            return typeReferenceTarget.LLType.PointerDepthPlusOne;
                         }
                     case PrimitiveTypeCode.IntPtr: return LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);
                     case PrimitiveTypeCode.UIntPtr: return LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);

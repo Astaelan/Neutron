@@ -23,6 +23,9 @@ namespace Neutron.HLIR
         //private HLMethod mMethodContainer = null;
         //public HLMethod MethodContainer { get { return mMethodContainer; } internal set { mMethodContainer = value; } }
 
+        private bool mIsReference = false;
+        public bool IsReference { get { return mIsReference; } internal set { mIsReference = value; } }
+
         private HLType mType = null;
         public HLType Type { get { return mType; } internal set { mType = value; } }
 

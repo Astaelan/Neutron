@@ -13,6 +13,7 @@ namespace Neutron.LLIR
         private string mName = null;
         private bool mExplicitName = false;
         private bool mExternal = false;
+        private bool mAbstract = false;
         private string mDescription = null;
         private string mIdentifier = null;
         private string mIdentifierHash = null;
@@ -29,6 +30,7 @@ namespace Neutron.LLIR
         public string Name { get { return mName; } internal set { mName = value; } }
         public bool ExplicitName { get { return mExplicitName; } set { mExplicitName = value; } }
         public bool External { get { return mExternal; } set { mExternal = value; } }
+        public bool Abstract { get { return mAbstract; } set { mAbstract = value; } }
         public string Description { get { return mDescription; } set { mDescription = value; } }
         public string Identifier { get { return mIdentifier; } internal set { mIdentifier = value; } }
         public string IdentifierHash { get { return mIdentifierHash; } internal set { mIdentifierHash = value; } }
@@ -93,6 +95,8 @@ namespace Neutron.LLIR
                 return sb.ToString();
             }
         }
+
+        public LLType FunctionType { get { return LLModule.GetOrCreateFunctionType(mReturnType, mParameters.ToList().ConvertAll(p => p.Type)); } }
 
         public override string ToString()
         {

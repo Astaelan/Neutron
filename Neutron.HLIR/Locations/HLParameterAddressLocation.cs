@@ -24,7 +24,7 @@ namespace Neutron.HLIR.Locations
         private HLParameter mParameter = null;
         public HLParameter Parameter { get { return mParameter; } }
 
-        public override string ToString() { return string.Format("({0})&{1}", Type, mParameter); }
+        public override string ToString() { return string.Format("({0}){1}{2}", Type, mParameter.IsReference ? "" : "&", mParameter); }
 
         internal override LLLocation Load(LLFunction pFunction)
         {

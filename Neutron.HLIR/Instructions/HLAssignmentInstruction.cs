@@ -1,4 +1,5 @@
 ﻿using Neutron.LLIR;
+using Neutron.LLIR.Locations;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,11 +29,39 @@ namespace Neutron.HLIR.Instructions
             LLLocation locationSource = mSource.Load(pFunction);
             if (mSource.Type.Definition.IsValueType && mDestination.Type == HLDomain.SystemObject)
             {
-                // TODO: Boxing
+                // Boxing
+                List<LLLocation> parameters = new List<LLLocation>();
+                LLLocation locationObjectReference = LLTemporaryLocation.Create(pFunction.CreateTemporary(HLDomain.SystemObject.LLType.PointerDepthPlusOne));
+                pFunction.CurrentBlock.EmitAllocate(locationObjectReference);
+                pFunction.CurrentBlock.EmitStore(locationObjectReference, LLLiteralLocation.Create(LLLiteral.Create(locationObjectReference.Type.PointerDepthMinusOne, "zeroinitializer")));
+
+                parameters.Add(locationObjectReference);
+                parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRootFunction.Parameters[1].Type, "null")));
+                pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRootFunction), parameters);
+
+                LLLocation locationTotalSize = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocFunction.Parameters[1].Type, (HLDomain.SizeOfPointer + mSource.Type.CalculatedSize).ToString()));
+                LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocFunction.Parameters[2].Type, mSource.Type.RuntimeTypeHandle.ToString()));
+
+                parameters.Clear();
+                parameters.Add(locationObjectReference);
+                parameters.Add(locationTotalSize);
+                parameters.Add(locationHandle);
+                pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCAllocFunction), parameters);
+
+                LLLocation locationObject = LLTemporaryLocation.Create(pFunction.CreateTemporary(HLDomain.SystemObject.LLType));
+                pFunction.CurrentBlock.EmitLoad(locationObject, locationObjectReference);
+
+                LLLocation locationObjectValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationObject.Type));
+                pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationObject, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
+
+                locationObjectValue = pFunction.CurrentBlock.EmitConversion(locationObjectValue, mSource.Type.LLType.PointerDepthPlusOne);
+                pFunction.CurrentBlock.EmitStore(locationObjectValue, locationSource);
+                locationSource = locationObject;
             }
             else if (mSource.Type == HLDomain.SystemObject && mDestination.Type.Definition.IsValueType)
             {
                 // TODO: Unboxing
+                locationSource = locationSource;
             }
             mDestination.Store(pFunction, locationSource);
         }
