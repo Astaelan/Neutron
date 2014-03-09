@@ -35,7 +35,7 @@ namespace Neutron.Test
             //return y.Length;
 
             byte x = 42;
-            ConsoleWrite(x.GetType().ToString());
+            ConsoleWrite(x.GetType().ToString() + "\n");
             return x;
 
             //byte y = 42;

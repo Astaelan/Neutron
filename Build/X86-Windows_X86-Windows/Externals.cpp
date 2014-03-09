@@ -61,7 +61,6 @@ extern "C" {
 	void __cdecl F_204310C5649413C5(SystemString** _this, int16_t* pValue);    // System.Void System.String..ctor(System.Char*)
 	void __cdecl F_164E479A86BE82E3(SystemString** _this, int16_t pChar, int32_t pCount);    // System.Void System.String..ctor(System.Char, System.Int32)
 	void __cdecl F_9E4B5118337A8FDD(SystemString** _this, int8_t* pValue);    // System.Void System.String..ctor(System.SByte*)
-	//int32_t __cdecl F_5DB28D7B95C5BF0F(SystemString* _this);    // System.Int32 System.String.Length.get()
 
 	void __cdecl F_88DF95E6873B512C(SystemString* str);    // System.Void Neutron.Test.Program.ConsoleWrite(System.String str)
 };
@@ -80,31 +79,31 @@ void* __cdecl VTableLookup(void* _this, int32_t index)
 	int32_t handle = (int32_t)((SystemObject*)_this)->mRuntimeTypeHandle;
 	int32_t vtable = RuntimeTypeDataTable[handle].VTable;
 	int32_t offset = vtable + index;
-	printf("VTableLookup: offset = %d\n", offset);
+	//printf("VTableLookup: offset = %d\n", offset);
 	return RuntimeTypeDataVirtualTable[offset];
 }
 
 void* __cdecl F_DCA596035033EDA2(SystemObject* pObject)    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
 {
-	printf("InternalGetRuntimeTypeHandle: handle = %d\n", (int32_t)pObject->mRuntimeTypeHandle);
+	//printf("InternalGetRuntimeTypeHandle: handle = %d\n", (int32_t)pObject->mRuntimeTypeHandle);
 	return pObject->mRuntimeTypeHandle;
 }
 
 SystemRuntimeTypeData* __cdecl F_45916642A61E51DD(void* pHandle)    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
 {
-	printf("InternalGetRuntimeTypeData: handle = %d, vtable = %d\n", (int32_t)pHandle, RuntimeTypeDataTable[(int32_t)pHandle].VTable);
+	//printf("InternalGetRuntimeTypeData: handle = %d, vtable = %d\n", (int32_t)pHandle, RuntimeTypeDataTable[(int32_t)pHandle].VTable);
 	return &RuntimeTypeDataTable[(int32_t)pHandle];
 }
 
 int8_t* __cdecl F_7E32112E1C16B000(int32_t pOffset)    // System.SByte* System.RuntimeType.InternalGetRuntimeTypeDataString(System.Int32)
 {
-	printf("InternalGetRuntimeTypeDataString: offset = %d, value = %s\n", pOffset, &RuntimeTypeDataStringTable[pOffset]);
+	//printf("InternalGetRuntimeTypeDataString: offset = %d, value = %s\n", pOffset, &RuntimeTypeDataStringTable[pOffset]);
 	return &RuntimeTypeDataStringTable[pOffset];
 }
 
 void __cdecl F_55D4A0F5FE5A88D5(SystemString** pString, int32_t pLength)    // System.String System.String.InternalAllocate(System.Int32)
 {
-	printf("String.InternalAllocate: %u bytes\n", pLength);
+	//printf("String.InternalAllocate: %u bytes\n", pLength);
 	GCAllocate((void**)pString, sizeof(SystemString) + (pLength << 1), RuntimeTypeHandle_SystemString);
 	(*pString)->mArrayLength = pLength + 1;
 	(*pString)->mStringLength = pLength;
@@ -146,14 +145,6 @@ void __cdecl F_9E4B5118337A8FDD(SystemString** _this, int8_t* pValue)    // Syst
 	for (int32_t index = 0; index < stringLength; ++index)
 		chars[index] = pValue[index];
 }
-
-
-/*
-int32_t __cdecl F_5DB28D7B95C5BF0F(SystemString* _this)    // System.Int32 System.String.Length.get()
-{
-	return _this->mStringLength;
-}
-*/
 
 
 void __cdecl F_88DF95E6873B512C(SystemString* str)    // System.Void Neutron.Test.Program.ConsoleWrite(System.String str)

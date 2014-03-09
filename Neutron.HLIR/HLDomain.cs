@@ -75,7 +75,7 @@ namespace Neutron.HLIR
             sEntryMethod = GetOrCreateMethod(Module.EntryPoint);
 
             int checkedTypes = 0;
-            while (sTypes.Count != checkedTypes && sPendingMethods.Count > 0)
+            while (sTypes.Count != checkedTypes || sPendingMethods.Count > 0)
             {
                 // STARTED: Process IStatements/IExpressions into HLInstructionBlocks/HLInstructions
                 while (sPendingMethods.Count > 0) sPendingMethods.Dequeue().Process();
