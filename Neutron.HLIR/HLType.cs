@@ -196,7 +196,17 @@ namespace Neutron.HLIR
                                 return LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);
                             }
                             if (Definition.IsReferenceType || Definition.IsClass) return LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);
-                            if (Definition.IsValueType) return LLModule.GetOrCreateArrayType(LLModule.GetOrCreateUnsignedType(8), CalculatedSize);
+                            if (Definition.IsValueType)
+                            {
+                                switch (CalculatedSize)
+                                {
+                                    case 1: return LLModule.GetOrCreateUnsignedType(8);
+                                    case 2: return LLModule.GetOrCreateUnsignedType(16);
+                                    case 4: return LLModule.GetOrCreateUnsignedType(32);
+                                    case 8: return LLModule.GetOrCreateUnsignedType(64);
+                                    default: return LLModule.GetOrCreateArrayType(LLModule.GetOrCreateUnsignedType(8), CalculatedSize);
+                                }
+                            }
                             throw new NotSupportedException();
                         }
                     default: throw new NotSupportedException();

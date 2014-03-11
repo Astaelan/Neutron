@@ -52,9 +52,9 @@ extern "C" {
 	void __cdecl GCAllocate(void** _this, size_t size, int32_t handle);
 	void* __cdecl VTableLookup(void* _this, int32_t index);
 
-	void* __cdecl F_DCA596035033EDA2(SystemObject* pObject);    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
+	void* __cdecl F_A46A2808941F775B(SystemObject* pObject);    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
 
-	SystemRuntimeTypeData* __cdecl F_45916642A61E51DD(void* pHandle);    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
+	SystemRuntimeTypeData* __cdecl F_C7E99750787937C1(void* pHandle);    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
 	int8_t* __cdecl F_7E32112E1C16B000(int32_t pOffset);    // System.SByte* System.RuntimeType.InternalGetRuntimeTypeDataString(System.Int32)
 
 	void __cdecl F_55D4A0F5FE5A88D5(SystemString** pString, int32_t pLength);    // System.Void System.String.InternalAllocate(System.String, System.Int32)
@@ -71,7 +71,7 @@ void __cdecl GCAllocate(void** _this, size_t size, int32_t handle)
 	SystemObject* obj = (SystemObject*)*_this;
 	obj->mRuntimeTypeHandle = (void*)handle;
 	// TODO: Link obj to alive list
-	printf("GCAllocate: %u bytes for %d\n", size, handle);
+	//printf("GCAllocate: %u bytes for %d (%d) %d\n", size, handle, (int32_t)obj->mRuntimeTypeHandle, (int32_t)obj);
 }
 
 void* __cdecl VTableLookup(void* _this, int32_t index)
@@ -83,13 +83,14 @@ void* __cdecl VTableLookup(void* _this, int32_t index)
 	return RuntimeTypeDataVirtualTable[offset];
 }
 
-void* __cdecl F_DCA596035033EDA2(SystemObject* pObject)    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
+void* __cdecl F_A46A2808941F775B(SystemObject* pObject)    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
 {
+	//printf("InternalGetRuntimeTypeHandle: %d\n", (int32_t)pObject);
 	//printf("InternalGetRuntimeTypeHandle: handle = %d\n", (int32_t)pObject->mRuntimeTypeHandle);
 	return pObject->mRuntimeTypeHandle;
 }
 
-SystemRuntimeTypeData* __cdecl F_45916642A61E51DD(void* pHandle)    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
+SystemRuntimeTypeData* __cdecl F_C7E99750787937C1(void* pHandle)    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
 {
 	//printf("InternalGetRuntimeTypeData: handle = %d, vtable = %d\n", (int32_t)pHandle, RuntimeTypeDataTable[(int32_t)pHandle].VTable);
 	return &RuntimeTypeDataTable[(int32_t)pHandle];
