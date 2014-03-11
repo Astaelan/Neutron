@@ -34,14 +34,14 @@ namespace Neutron.Test
             //ConsoleWrite(y);
             //return y.Length;
 
-            byte x = 42;
-            ConsoleWrite(x.GetType().ToString() + "\n");
-            return x;
+            //byte x = 42;
+            //ConsoleWrite(x.GetType().ToString() + "\n");
+            //return x;
 
-            //byte y = 42;
-            //y++;
-            //object x = y;
-            //return (int)x;
+            byte y = 42;
+            y++;
+            object x = y;
+            return (byte)x;
 
             //TestX x = new TestX();
             //TestD d = x.Test;

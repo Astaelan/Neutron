@@ -53,15 +53,23 @@ namespace Neutron.HLIR.Instructions
 
                 LLLocation locationObjectValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationObject.Type));
                 pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationObject, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
-
                 locationObjectValue = pFunction.CurrentBlock.EmitConversion(locationObjectValue, mSource.Type.LLType.PointerDepthPlusOne);
+
                 pFunction.CurrentBlock.EmitStore(locationObjectValue, locationSource);
                 locationSource = locationObject;
             }
             else if (mSource.Type == HLDomain.SystemObject && mDestination.Type.Definition.IsValueType)
             {
-                // TODO: Unboxing
-                locationSource = locationSource;
+                // Unboxing
+
+                // TODO: Branch on destination type handle not matching object handle, and throw exception
+                LLLocation locationObjectValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationSource.Type));
+                pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationSource, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
+                locationObjectValue = pFunction.CurrentBlock.EmitConversion(locationObjectValue, mDestination.Type.LLType.PointerDepthPlusOne);
+
+                LLLocation locationValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationObjectValue.Type.PointerDepthMinusOne));
+                pFunction.CurrentBlock.EmitLoad(locationValue, locationObjectValue);
+                locationSource = locationValue;
             }
             mDestination.Store(pFunction, locationSource);
         }
