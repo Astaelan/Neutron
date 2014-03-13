@@ -42,6 +42,9 @@ namespace Neutron.HLIR
         private bool mIsExternal = false;
         public bool IsExternal { get { return mIsExternal; } internal set { mIsExternal = value; } }
 
+        private bool mIsRuntimeImplemented = false;
+        public bool IsRuntimeImplemented { get { return mIsRuntimeImplemented; } internal set { mIsRuntimeImplemented = value; } }
+
         private bool mIsAbstract = false;
         public bool IsAbstract { get { return mIsAbstract; } internal set { mIsAbstract = value; } }
 
@@ -477,7 +480,7 @@ namespace Neutron.HLIR
             HLType typeElement = HLDomain.GetOrCreateType(pExpression.ElementType);
             HLLocation locationInstance = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
             HLLocation locationSize = ProcessExpression(pExpression.Sizes.First());
-            mCurrentBlock.EmitNewArray(locationInstance.AddressOf(), locationSize, typeElement);
+            mCurrentBlock.EmitNewArray(locationInstance.AddressOf(), locationSize, locationInstance.Type, typeElement);
 
             IExpression[] initializers = pExpression.Initializers.ToArray();
             for (int indexInitializer = 0; indexInitializer < initializers.Length; ++indexInitializer)
@@ -492,7 +495,12 @@ namespace Neutron.HLIR
 
         private HLLocation ProcessCreateDelegateInstanceExpression(ICreateDelegateInstance pExpression)
         {
-            return null;
+            HLLocation locationInstance = null;
+            if (pExpression.Instance != null) locationInstance = ProcessExpression(pExpression.Instance);
+            HLMethod methodCalled = HLDomain.GetOrCreateMethod(pExpression.MethodToCallViaDelegate);
+            HLLocation locationDelegate = HLTemporaryLocation.Create(CreateTemporary(HLDomain.GetOrCreateType(pExpression.Type)));
+            mCurrentBlock.EmitNewDelegate(locationDelegate.Type, locationDelegate.AddressOf(), locationInstance, methodCalled, pExpression.IsVirtualDelegate);
+            return locationDelegate;
         }
 
         private HLLocation ProcessCreateObjectInstanceExpression(ICreateObjectInstance pExpression)
@@ -595,6 +603,13 @@ namespace Neutron.HLIR
             List<HLLocation> locationsParameters = new List<HLLocation>();
             if (pExpression.ThisArgument.Type.TypeCode != PrimitiveTypeCode.Invalid)
                 locationsParameters.Add(ProcessExpression(pExpression.ThisArgument));
+            else if (pExpression.MethodToCall.IsStatic)
+            {
+                HLType typeContainer = null;
+                if (pExpression.MethodToCall.ContainingType.ResolvedType.IsValueType) typeContainer = HLDomain.GetOrCreateType(MutableModelHelper.GetManagedPointerTypeReference(pExpression.MethodToCall.ContainingType, HLDomain.Host.InternFactory, pExpression.MethodToCall.ContainingType));
+                else typeContainer = HLDomain.GetOrCreateType(pExpression.MethodToCall.ContainingType);
+                locationsParameters.Add(HLNullLocation.Create(typeContainer));
+            }
             foreach (IExpression argument in pExpression.Arguments)
                 locationsParameters.Add(ProcessExpression(argument));
 
@@ -724,7 +739,7 @@ namespace Neutron.HLIR
                 parameters.Add(LLParameter.Create(typeParameter, parameter.Name));
             }
             bool entryFunction = HLDomain.EntryMethod == this;
-            mLLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (Container.ToString() + "." + ToString()), entryFunction, IsExternal, IsAbstract, ReturnType.LLType, parameters);
+            mLLFunction = LLModule.GetOrCreateFunction(entryFunction ? "main" : (Container.ToString() + "." + ToString()), entryFunction, IsExternal, IsAbstract || IsRuntimeImplemented, ReturnType.LLType, parameters);
             LLFunction.Description = Signature;
             foreach (HLParameter parameter in Parameters.Where(p => p.RequiresAddressing)) parameter.AddressableLocal = LLFunction.CreateLocal(parameter.Type.LLType, "local_" + parameter.Name);
             foreach (HLLocal local in Locals) LLFunction.CreateLocal(local.Type.LLType, local.Name);

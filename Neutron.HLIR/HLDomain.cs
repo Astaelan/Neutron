@@ -33,6 +33,9 @@ namespace Neutron.HLIR
         private static Dictionary<string, HLParameter> sParameters = new Dictionary<string, HLParameter>();
         private static Dictionary<string, HLLocal> sLocals = new Dictionary<string, HLLocal>();
 
+        private static HLType sSystemRuntimeMethodData = null;
+        public static HLType SystemRuntimeMethodData { get { return sSystemRuntimeMethodData; } }
+
         private static HLType sSystemRuntimeMethodHandle = null;
         public static HLType SystemRuntimeMethodHandle { get { return sSystemRuntimeMethodHandle; } }
 
@@ -53,14 +56,26 @@ namespace Neutron.HLIR
 
         private static Queue<HLMethod> sPendingMethods = new Queue<HLMethod>();
 
-        private static LLFunction sGCAllocateFunction = null;
-        public static LLFunction GCAllocFunction { get { return sGCAllocateFunction; } }
+        private static LLFunction sGCAllocate = null;
+        public static LLFunction GCAllocate { get { return sGCAllocate; } }
 
-        private static LLFunction sGCRootFunction = null;
-        public static LLFunction GCRootFunction { get { return sGCRootFunction; } }
+        private static LLFunction sGCRoot = null;
+        public static LLFunction GCRoot { get { return sGCRoot; } }
 
-        private static LLFunction sVTableLookupFunction = null;
-        public static LLFunction VTableLookupFunction { get { return sVTableLookupFunction; } }
+        private static LLFunction sVTableHandleLookup = null;
+        public static LLFunction VTableHandleLookup { get { return sVTableHandleLookup; } }
+
+        private static LLFunction sVTableFunctionLookup = null;
+        public static LLFunction VTableFunctionLookup { get { return sVTableFunctionLookup; } }
+
+        private static LLFunction sDelegateLookup = null;
+        public static LLFunction DelegateLookup { get { return sDelegateLookup; } }
+
+        private static LLFunction sDelegateInstance = null;
+        public static LLFunction DelegateInstance { get { return sDelegateInstance; } }
+
+        private static LLGlobal sRuntimeMethodDataFunctionTable = null;
+        public static LLGlobal RuntimeMethodDataFunctionTable { get { return sRuntimeMethodDataFunctionTable; } }
 
         public static void Process(string pInputPath)
         {
@@ -100,9 +115,12 @@ namespace Neutron.HLIR
 
             // DONE: Convert HLTypes to LLTypes
 
-            BuildGCAllocateFunction();
-            BuildGCRootFunction();
-            BuildVTableLookupFunction();
+            BuildGCAllocate();
+            BuildGCRoot();
+            BuildVTableHandleLookup();
+            BuildVTableFunctionLookup();
+            BuildDelegateLookup();
+            BuildDelegateInstance();
 
             BuildGlobals();
 
@@ -113,6 +131,9 @@ namespace Neutron.HLIR
 
             // STARTED: Build constant global runtime type data
             BuildRuntimeTypeData();
+
+            // STARTED: Build constant global runtime method data
+            BuildRuntimeMethodData();
 
             // STARTED: Convert HLInstructions to LLInstructions
             foreach (HLMethod method in sMethods.Values) method.Transform();
@@ -136,7 +157,7 @@ namespace Neutron.HLIR
             if (referenceBase != null)
             {
                 type.BaseType = GetOrCreateType(referenceBase);
-                type.Fields.AddRange(type.BaseType.MemberFields);
+                type.BaseType.MemberFields.ForEach(f => type.Fields.Add(f));
             }
 
             foreach (IFieldDefinition fieldDefinition in pDefinition.Fields.OrderBy(d => d.SequenceNumber))
@@ -190,11 +211,12 @@ namespace Neutron.HLIR
 
             method.IsStatic = pDefinition.IsStatic;
             method.IsExternal = pDefinition.IsExternal;
+            method.IsRuntimeImplemented = pDefinition.IsRuntimeImplemented;
             method.IsAbstract = pDefinition.IsAbstract;
             method.IsVirtual = pDefinition.IsVirtual;
             method.IsConstructor = pDefinition.IsConstructor;
             method.ReturnType = GetOrCreateType(pDefinition.Type);
-            if (!pDefinition.IsStatic && !pDefinition.HasExplicitThisParameter)
+            if (pDefinition != Module.EntryPoint.ResolvedMethod && !pDefinition.HasExplicitThisParameter)
             {
                 HLType typeImplicitThis = method.Container;
                 if (typeImplicitThis.Definition.IsValueType)
@@ -282,11 +304,13 @@ namespace Neutron.HLIR
 
         private static void EnlistRuntimeTypes()
         {
+            sSystemRuntimeMethodData = GetOrCreateType(UnitHelper.FindType(Host.NameTable, sRuntimeAssembly, "System.RuntimeMethodData"));
             sSystemRuntimeMethodHandle = GetOrCreateType(PlatformType.SystemRuntimeMethodHandle);
             sSystemRuntimeType = GetOrCreateType(UnitHelper.FindType(Host.NameTable, sRuntimeAssembly, "System.RuntimeType"));
             sSystemRuntimeTypeData = GetOrCreateType(UnitHelper.FindType(Host.NameTable, sRuntimeAssembly, "System.RuntimeTypeData"));
             sSystemRuntimeTypeHandle = GetOrCreateType(PlatformType.SystemRuntimeTypeHandle);
             sSystemString = GetOrCreateType(PlatformType.SystemString);
+            if (sSystemRuntimeMethodData.Definition.TypeCode == PrimitiveTypeCode.Invalid) throw new NotImplementedException();
             if (sSystemRuntimeTypeData.Definition.TypeCode == PrimitiveTypeCode.Invalid) throw new NotImplementedException();
         }
 
@@ -303,29 +327,51 @@ namespace Neutron.HLIR
             if (sSystemStringCtorWithCharPointer == null) throw new MissingMethodException();
         }
 
-        private static void BuildGCAllocateFunction()
+        private static void BuildGCAllocate()
         {
             List<LLParameter> parametersFunction = new List<LLParameter>();
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 2), "this"));
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreateUnsignedType(32), "size"));
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreateSignedType(32), "handle"));
-            sGCAllocateFunction = LLModule.GetOrCreateFunction("GCAllocate", true, true, false, LLModule.VoidType, parametersFunction);
+            sGCAllocate = LLModule.GetOrCreateFunction("GCAllocate", true, true, false, LLModule.VoidType, parametersFunction);
         }
 
-        private static void BuildGCRootFunction()
+        private static void BuildGCRoot()
         {
             List<LLParameter> parametersFunction = new List<LLParameter>();
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 2), "ptrloc"));
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), "metadata"));
-            sGCRootFunction = LLModule.GetOrCreateFunction("llvm.gcroot", true, true, false, LLModule.VoidType, parametersFunction);
+            sGCRoot = LLModule.GetOrCreateFunction("llvm.gcroot", true, true, false, LLModule.VoidType, parametersFunction);
         }
 
-        private static void BuildVTableLookupFunction()
+        private static void BuildVTableHandleLookup()
         {
             List<LLParameter> parametersFunction = new List<LLParameter>();
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), "this"));
             parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreateSignedType(32), "index"));
-            sVTableLookupFunction = LLModule.GetOrCreateFunction("VTableLookup", true, true, false, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), parametersFunction);
+            sVTableFunctionLookup = LLModule.GetOrCreateFunction("VTableHandleLookup", true, true, false, LLModule.GetOrCreateSignedType(32), parametersFunction);
+        }
+
+        private static void BuildVTableFunctionLookup()
+        {
+            List<LLParameter> parametersFunction = new List<LLParameter>();
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), "this"));
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreateSignedType(32), "index"));
+            sVTableFunctionLookup = LLModule.GetOrCreateFunction("VTableFunctionLookup", true, true, false, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), parametersFunction);
+        }
+
+        private static void BuildDelegateLookup()
+        {
+            List<LLParameter> parametersFunction = new List<LLParameter>();
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), "this"));
+            sDelegateLookup = LLModule.GetOrCreateFunction("DelegateLookup", true, true, false, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), parametersFunction);
+        }
+
+        private static void BuildDelegateInstance()
+        {
+            List<LLParameter> parametersFunction = new List<LLParameter>();
+            parametersFunction.Add(LLParameter.Create(LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), "this"));
+            sDelegateInstance = LLModule.GetOrCreateFunction("DelegateInstance", true, true, false, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1), parametersFunction);
         }
 
         private static void BuildGlobals()
@@ -364,7 +410,7 @@ namespace Neutron.HLIR
             List<LLLiteral> literalsRuntimeTypeDataTable = new List<LLLiteral>();
             Dictionary<string, int> stringsRuntimeTypeDataStringTable = new Dictionary<string, int>();
             string stringRuntimeTypeDataStringTable = "";
-            List<LLFunction> functionsRuntimeTypeDataVirtualTable = new List<LLFunction>();
+            List<int> handlesRuntimeTypeDataVirtualTable = new List<int>();
             List<LLLiteral> literalsRuntimeTypeDataVirtualTable = new List<LLLiteral>();
 
             stringsRuntimeTypeDataStringTable[""] = stringRuntimeTypeDataStringTable.Length;
@@ -395,17 +441,22 @@ namespace Neutron.HLIR
                     }
                 }
 
-                literalsRuntimeTypeDataTable.Add(typeRuntimeTypeData.ToLiteral(type.RuntimeTypeHandle.ToString(), flags.ToString(), type.CalculatedSize.ToString(), offsetName.ToString(), offsetNamespace.ToString(), functionsRuntimeTypeDataVirtualTable.Count.ToString()));
+                literalsRuntimeTypeDataTable.Add(typeRuntimeTypeData.ToLiteral(type.RuntimeTypeHandle.ToString(), flags.ToString(), type.CalculatedSize.ToString(), offsetName.ToString(), offsetNamespace.ToString(), handlesRuntimeTypeDataVirtualTable.Count.ToString()));
 
-                List<LLFunction> functions = type.VirtualTable.ConvertAll(m => m.LLFunction);
-                foreach (LLFunction function in functions)
+                //List<LLFunction> functions = type.VirtualTable.ConvertAll(m => m.LLFunction);
+                foreach (HLMethod method in type.VirtualTable)
                 {
-                    functionsRuntimeTypeDataVirtualTable.Add(function);
-                    string literalAddress = null;
-                    if (function.Abstract) literalAddress = "null";
-                    else literalAddress = string.Format("bitcast({0} {1} to {2})", LLModule.GetOrCreatePointerType(function.FunctionType, 1), function, typePointer);
-                    literalsRuntimeTypeDataVirtualTable.Add(LLLiteral.Create(typePointer, literalAddress));
+                    handlesRuntimeTypeDataVirtualTable.Add(method.RuntimeMethodHandle);
+                    literalsRuntimeTypeDataVirtualTable.Add(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), method.RuntimeMethodHandle.ToString()));
                 }
+                //foreach (LLFunction function in functions)
+                //{
+                //    handlesRuntimeTypeDataVirtualTable.Add(function);
+                //    string literalAddress = null;
+                //    if (function.Abstract) literalAddress = "null";
+                //    else literalAddress = string.Format("bitcast({0} {1} to {2})", LLModule.GetOrCreatePointerType(function.FunctionType, 1), function, typePointer);
+                //    literalsRuntimeTypeDataVirtualTable.Add(LLLiteral.Create(typePointer, literalAddress));
+                //}
             }
             globalRuntimeTypeDataTable.InitialValue = typeRuntimeTypeDataTable.ToLiteral(literalsRuntimeTypeDataTable.ConvertAll(l => l.Value).ToArray());
             LLGlobal globalRuntimeTypeDataTableCount = LLModule.CreateGlobal(LLModule.GetOrCreateSignedType(32), "RuntimeTypeDataTableCount");
@@ -417,12 +468,68 @@ namespace Neutron.HLIR
             LLGlobal globalRuntimeTypeDataStringTable = LLModule.CreateGlobal(typeRuntimeTypeDataStringTable.PointerDepthPlusOne, "RuntimeTypeDataStringTable");
             globalRuntimeTypeDataStringTable.InitialValue = typeRuntimeTypeDataStringTable.ToLiteral(literalsRuntimeTypeDataStringTable);
 
-            LLType typeRuntimeTypeDataVirtualTable = LLModule.GetOrCreateArrayType(typePointer, functionsRuntimeTypeDataVirtualTable.Count);
+            LLType typeRuntimeTypeDataVirtualTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(32), handlesRuntimeTypeDataVirtualTable.Count);
             LLGlobal globalRuntimeTypeDataVirtualTable = LLModule.CreateGlobal(typeRuntimeTypeDataVirtualTable.PointerDepthPlusOne, "RuntimeTypeDataVirtualTable");
             globalRuntimeTypeDataVirtualTable.InitialValue = typeRuntimeTypeDataVirtualTable.ToLiteral(literalsRuntimeTypeDataVirtualTable.ConvertAll(l => l.Value).ToArray());
-
             LLGlobal globalRuntimeTypeDataVirtualTableCount = LLModule.CreateGlobal(LLModule.GetOrCreateSignedType(32), "RuntimeTypeDataVirtualTableCount");
-            globalRuntimeTypeDataVirtualTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), functionsRuntimeTypeDataVirtualTable.Count.ToString());
+            globalRuntimeTypeDataVirtualTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), handlesRuntimeTypeDataVirtualTable.Count.ToString());
+        }
+
+        private static void BuildRuntimeMethodData()
+        {
+            List<LLType> fieldsRuntimeMethodData = sSystemRuntimeMethodData.Fields.Where(f => !f.IsStatic).ToList().ConvertAll(f => f.Type.LLType);
+            LLType typePointer = LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);
+            LLType typeRuntimeMethodData = LLModule.GetOrCreateStructureType("RuntimeMethodData", true, fieldsRuntimeMethodData);
+            LLType typeRuntimeMethodDataTable = LLModule.GetOrCreateArrayType(typeRuntimeMethodData, sMethods.Values.Count);
+            LLGlobal globalRuntimeMethodDataTable = LLModule.CreateGlobal(typeRuntimeMethodDataTable.PointerDepthPlusOne, "RuntimeMethodDataTable");
+            List<LLLiteral> literalsRuntimeMethodDataTable = new List<LLLiteral>();
+            Dictionary<string, int> stringsRuntimeMethodDataStringTable = new Dictionary<string, int>();
+            string stringRuntimeMethodDataStringTable = "";
+            List<LLFunction> functionsRuntimeMethodDataFunctionTable = new List<LLFunction>();
+            List<LLLiteral> literalsRuntimeMethodDataFunctionTable = new List<LLLiteral>();
+
+            stringsRuntimeMethodDataStringTable[""] = stringRuntimeMethodDataStringTable.Length;
+            stringRuntimeMethodDataStringTable += "\0";
+            foreach (HLMethod method in sMethods.Values.OrderBy(m => m.RuntimeMethodHandle))
+            {
+                int flags = 0;
+                if (method.IsStatic) flags |= 1 << 0;
+
+                int offsetName = 0;
+                string definitionName = method.Definition.Name.Value;
+                if (!stringsRuntimeMethodDataStringTable.TryGetValue(definitionName, out offsetName))
+                {
+                    offsetName = stringRuntimeMethodDataStringTable.Length;
+                    stringsRuntimeMethodDataStringTable[definitionName] = offsetName;
+                    stringRuntimeMethodDataStringTable += definitionName + "\0";
+                }
+
+                literalsRuntimeMethodDataTable.Add(typeRuntimeMethodData.ToLiteral(method.RuntimeMethodHandle.ToString(), flags.ToString(), offsetName.ToString()));
+
+                LLFunction function = method.LLFunction;
+                functionsRuntimeMethodDataFunctionTable.Add(function);
+                string literalAddress = null;
+                if (method.LLFunction.Abstract) literalAddress = "null";
+                else literalAddress = string.Format("bitcast({0} {1} to {2})", LLModule.GetOrCreatePointerType(function.FunctionType, 1), function, typePointer);
+                literalsRuntimeMethodDataFunctionTable.Add(LLLiteral.Create(typePointer, literalAddress));
+            }
+            globalRuntimeMethodDataTable.InitialValue = typeRuntimeMethodDataTable.ToLiteral(literalsRuntimeMethodDataTable.ConvertAll(l => l.Value).ToArray());
+            LLGlobal globalRuntimeMethodDataTableCount = LLModule.CreateGlobal(LLModule.GetOrCreateSignedType(32), "RuntimeMethodDataTableCount");
+            globalRuntimeMethodDataTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), sMethods.Values.Count.ToString());
+
+            byte[] bufferRuntimeMethodDataStringTable = Encoding.ASCII.GetBytes(stringRuntimeMethodDataStringTable);
+            string[] literalsRuntimeMethodDataStringTable = Array.ConvertAll(bufferRuntimeMethodDataStringTable, b => b.ToString());
+            LLType typeRuntimeMethodDataStringTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(8), literalsRuntimeMethodDataStringTable.Length);
+            LLGlobal globalRuntimeMethodDataStringTable = LLModule.CreateGlobal(typeRuntimeMethodDataStringTable.PointerDepthPlusOne, "RuntimeMethodDataStringTable");
+            globalRuntimeMethodDataStringTable.InitialValue = typeRuntimeMethodDataStringTable.ToLiteral(literalsRuntimeMethodDataStringTable);
+
+            LLType typeRuntimeMethodDataFunctionTable = LLModule.GetOrCreateArrayType(typePointer, functionsRuntimeMethodDataFunctionTable.Count);
+            LLGlobal globalRuntimeMethodDataFunctionTable = LLModule.CreateGlobal(typeRuntimeMethodDataFunctionTable.PointerDepthPlusOne, "RuntimeMethodDataFunctionTable");
+            globalRuntimeMethodDataFunctionTable.InitialValue = typeRuntimeMethodDataFunctionTable.ToLiteral(literalsRuntimeMethodDataFunctionTable.ConvertAll(l => l.Value).ToArray());
+            LLGlobal globalRuntimeMethodDataFunctionTableCount = LLModule.CreateGlobal(LLModule.GetOrCreateSignedType(32), "RuntimeMethodDataFunctionTableCount");
+            globalRuntimeMethodDataFunctionTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), functionsRuntimeMethodDataFunctionTable.Count.ToString());
+
+            sRuntimeMethodDataFunctionTable = globalRuntimeMethodDataFunctionTable;
         }
 
         private static Lazy<HLType> sSystemArray = new Lazy<HLType>(() => GetOrCreateType(PlatformType.SystemArray));

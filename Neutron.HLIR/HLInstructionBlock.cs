@@ -62,7 +62,8 @@ namespace Neutron.HLIR
         public void EmitLabel(HLLabel pLabel) { Emit(HLLabelInstruction.Create(mMethod, pLabel)); }
         public void EmitModulus(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLModulusInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }
         public void EmitMultiply(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLMultiplyInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }
-        public void EmitNewArray(HLLocation pDestinationSource, HLLocation pSizeSource, HLType pElementType) { Emit(HLNewArrayInstruction.Create(mMethod, pDestinationSource, pSizeSource, pElementType)); }
+        public void EmitNewArray(HLLocation pDestinationSource, HLLocation pSizeSource, HLType pArrayType, HLType pElementType) { Emit(HLNewArrayInstruction.Create(mMethod, pDestinationSource, pSizeSource, pArrayType, pElementType)); }
+        public void EmitNewDelegate(HLType pNewDelegateType, HLLocation pDestinationSource, HLLocation pInstanceSource, HLMethod pMethodCalled, bool pVirtual) { Emit(HLNewDelegateInstruction.Create(mMethod, pNewDelegateType, pDestinationSource, pInstanceSource, pMethodCalled, pVirtual)); }
         public void EmitNewObject(HLType pNewObjectType, HLLocation pDestinationSource) { Emit(HLNewObjectInstruction.Create(mMethod, pNewObjectType, pDestinationSource)); }
         public void EmitReturn(HLLocation pSource) { Emit(HLReturnInstruction.Create(mMethod, pSource)); }
         public void EmitSubtract(HLLocation pDestination, HLLocation pLeftOperandSource, HLLocation pRightOperandSource) { Emit(HLSubtractInstruction.Create(mMethod, pDestination, pLeftOperandSource, pRightOperandSource)); }

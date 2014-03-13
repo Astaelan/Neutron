@@ -42,7 +42,9 @@ namespace Neutron.HLIR.Locations
             pFunction.CurrentBlock.EmitBranch(locationConstructorCall, labelTrue, labelFalse);
 
             LLInstructionBlock blockTrue = pFunction.CreateBlock(labelTrue);
-            blockTrue.EmitCall(null, LLFunctionLocation.Create(pType.StaticConstructor.LLFunction), new List<LLLocation>());
+            List<LLLocation> parameters = new List<LLLocation>();
+            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(pType.StaticConstructor.LLFunction.Parameters[0].Type, "zeroinitializer")));
+            blockTrue.EmitCall(null, LLFunctionLocation.Create(pType.StaticConstructor.LLFunction), parameters);
             blockTrue.EmitGoto(labelNext);
 
             LLInstructionBlock blockFalse = pFunction.CreateBlock(labelFalse);

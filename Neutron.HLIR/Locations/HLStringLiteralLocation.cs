@@ -32,8 +32,8 @@ namespace Neutron.HLIR.Locations
             pFunction.CurrentBlock.EmitStore(locationStringReference, LLLiteralLocation.Create(LLLiteral.Create(locationStringReference.Type.PointerDepthMinusOne, "zeroinitializer")));
 
             parameters.Add(locationStringReference);
-            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRootFunction.Parameters[1].Type, "null")));
-            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRootFunction), parameters);
+            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRoot.Parameters[1].Type, "null")));
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRoot), parameters);
 
             parameters.Clear();
             parameters.Add(locationStringReference);

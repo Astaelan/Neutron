@@ -31,12 +31,12 @@ namespace Neutron.HLIR
         private HLType mBaseType = null;
         public HLType BaseType { get { return mBaseType; } internal set { mBaseType = value; } }
 
-        private List<HLField> mFields = new List<HLField>();
-        public List<HLField> Fields { get { return mFields; } }
+        private HLFieldList mFields = new HLFieldList();
+        public HLFieldList Fields { get { return mFields; } }
 
-        public List<HLField> StaticFields { get { return mFields.FindAll(f => f.IsStatic); } }
+        public List<HLField> StaticFields { get { return mFields.Where(f => f.IsStatic).ToList(); } }
 
-        public List<HLField> MemberFields { get { return mFields.FindAll(f => !f.IsStatic); } }
+        public List<HLField> MemberFields { get { return mFields.Where(f => !f.IsStatic).ToList(); } }
 
         private List<HLMethod> mMethods = new List<HLMethod>();
         public List<HLMethod> Methods { get { return mMethods; } }

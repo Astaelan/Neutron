@@ -38,15 +38,19 @@ namespace Neutron.Test
             //ConsoleWrite(x.GetType().ToString() + "\n");
             //return x;
 
-            byte y = 42;
-            y++;
-            object x = y;
-            return (byte)x;
+            //return TestX.Test2(42);
 
-            //TestX x = new TestX();
-            //TestD d = x.Test;
-            //Func<int, int> 
+            //byte y = 42;
+            //y++;
+            //object x = y;
+            //return (byte)x;
+
+            //TestD d = TestX.Test2;
             //return d(42);
+
+            TestX x = new TestX();
+            TestD d = x.Test;
+            return d(42);
         }
 
         private delegate int TestD(int x);
@@ -67,6 +71,7 @@ namespace Neutron.Test
                 //}
                 return x;
             }
+            public static int Test2(int x) { return x; }
         }
     }
 }

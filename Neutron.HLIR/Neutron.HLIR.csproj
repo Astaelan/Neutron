@@ -106,6 +106,7 @@
     <Compile Include="HLInstructionBlock.cs" />
     <Compile Include="HLInstruction.cs" />
     <Compile Include="HLLabel.cs" />
+    <Compile Include="Instructions\HLNewDelegateInstruction.cs" />
     <Compile Include="Instructions\HLSwitchInstruction.cs" />
     <Compile Include="Instructions\HLCallInstruction.cs" />
     <Compile Include="Instructions\HLBitwiseXorInstruction.cs" />
@@ -126,6 +127,7 @@
     <Compile Include="Instructions\HLAssignmentInstruction.cs" />
     <Compile Include="Instructions\HLBranchInstruction.cs" />
     <Compile Include="Instructions\HLReturnInstruction.cs" />
+    <Compile Include="HLFieldList.cs" />
     <Compile Include="Locations\HLDefaultLocation.cs" />
     <Compile Include="Locations\HLArrayElementAddressLocation.cs" />
     <Compile Include="Locations\HLFieldAddressLocation.cs" />

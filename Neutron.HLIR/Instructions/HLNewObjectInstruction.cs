@@ -34,19 +34,18 @@ namespace Neutron.HLIR.Instructions
             pFunction.CurrentBlock.EmitStore(locationObjectReference, LLLiteralLocation.Create(LLLiteral.Create(locationObjectReference.Type.PointerDepthMinusOne, "zeroinitializer")));
 
             parameters.Add(locationObjectReference);
-            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRootFunction.Parameters[1].Type, "null")));
-            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRootFunction), parameters);
+            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRoot.Parameters[1].Type, "null")));
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRoot), parameters);
 
-            LLLocation locationTotalSize = LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateUnsignedType(32), mNewObjectType.CalculatedSize.ToString()));
-            locationTotalSize = pFunction.CurrentBlock.EmitConversion(locationTotalSize, HLDomain.GCAllocFunction.Parameters[1].Type);
+            LLLocation locationTotalSize = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[1].Type, mNewObjectType.CalculatedSize.ToString()));
 
-            LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), mNewObjectType.RuntimeTypeHandle.ToString()));
+            LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[2].Type, mNewObjectType.RuntimeTypeHandle.ToString()));
 
             parameters.Clear();
             parameters.Add(locationObjectReference);
             parameters.Add(locationTotalSize);
             parameters.Add(locationHandle);
-            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCAllocFunction), parameters);
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCAllocate), parameters);
         }
     }
 }

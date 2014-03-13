@@ -9,17 +9,19 @@ namespace Neutron.HLIR.Instructions
 {
     public sealed class HLNewArrayInstruction : HLInstruction
     {
-        public static HLNewArrayInstruction Create(HLMethod pMethod, HLLocation pDestinationSource, HLLocation pSizeSource, HLType pElementType)
+        public static HLNewArrayInstruction Create(HLMethod pMethod, HLLocation pDestinationSource, HLLocation pSizeSource, HLType pArrayType, HLType pElementType)
         {
             HLNewArrayInstruction instruction = new HLNewArrayInstruction(pMethod);
             instruction.mDestinationSource = pDestinationSource;
             instruction.mSizeSource = pSizeSource;
+            instruction.mArrayType = pArrayType;
             instruction.mElementType = pElementType;
             return instruction;
         }
 
         private HLLocation mDestinationSource = null;
         private HLLocation mSizeSource = null;
+        private HLType mArrayType = null;
         private HLType mElementType = null;
 
         private HLNewArrayInstruction(HLMethod pMethod) : base(pMethod) { }
@@ -36,8 +38,8 @@ namespace Neutron.HLIR.Instructions
             pFunction.CurrentBlock.EmitStore(locationArrayReference, LLLiteralLocation.Create(LLLiteral.Create(locationArrayReference.Type.PointerDepthMinusOne, "zeroinitializer")));
 
             parameters.Add(locationArrayReference);
-            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRootFunction.Parameters[1].Type, "null")));
-            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRootFunction), parameters);
+            parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRoot.Parameters[1].Type, "null")));
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRoot), parameters);
 
             LLLocation locationSize = mSizeSource.Load(pFunction);
             LLLocation locationElementsSize = locationSize;
@@ -48,14 +50,15 @@ namespace Neutron.HLIR.Instructions
             }
             LLLocation locationTotalSize = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationSize.Type));
             pFunction.CurrentBlock.EmitAdd(locationTotalSize, locationElementsSize, LLLiteralLocation.Create(LLLiteral.Create(locationSize.Type, (HLDomain.SizeOfPointer + 4).ToString())));
-            locationTotalSize = pFunction.CurrentBlock.EmitConversion(locationTotalSize, HLDomain.GCAllocFunction.Parameters[1].Type);
+            locationTotalSize = pFunction.CurrentBlock.EmitConversion(locationTotalSize, HLDomain.GCAllocate.Parameters[1].Type);
 
-            //LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocFunction.Parameters[2].Type, 
+            LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[2].Type, mArrayType.RuntimeTypeHandle.ToString()));
 
             parameters.Clear();
             parameters.Add(locationArrayReference);
             parameters.Add(locationTotalSize);
-            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCAllocFunction), parameters);
+            parameters.Add(locationHandle);
+            pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCAllocate), parameters);
 
             LLLocation locationArrayPointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayReference.Type.PointerDepthMinusOne));
             pFunction.CurrentBlock.EmitLoad(locationArrayPointer, locationArrayReference);
