@@ -53,14 +53,14 @@ namespace Neutron.HLIR.Locations
             LLLocation locationElementPointer = null;
             if (literalElementOffset.HasValue)
             {
-                locationElementOffset = LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(64), (literalElementOffset.Value + HLDomain.SizeOfPointer + 4).ToString()));
+                locationElementOffset = LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(64), (literalElementOffset.Value + HLDomain.SystemArray.CalculatedSize).ToString()));
                 locationElementPointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayPointer.Type));
                 pFunction.CurrentBlock.EmitGetElementPointer(locationElementPointer, locationArrayPointer, locationElementOffset);
             }
             else
             {
                 LLLocation locationTemporary = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayPointer.Type));
-                pFunction.CurrentBlock.EmitGetElementPointer(locationTemporary, locationArrayPointer, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), (HLDomain.SizeOfPointer + 4).ToString())));
+                pFunction.CurrentBlock.EmitGetElementPointer(locationTemporary, locationArrayPointer, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), (HLDomain.SystemArray.CalculatedSize).ToString())));
                 locationElementPointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayPointer.Type));
                 pFunction.CurrentBlock.EmitGetElementPointer(locationElementPointer, locationTemporary, locationElementOffset);
             }

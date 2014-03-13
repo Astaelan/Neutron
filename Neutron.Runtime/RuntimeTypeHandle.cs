@@ -2,10 +2,8 @@
 {
     public struct RuntimeTypeHandle
     {
-        private IntPtr mValue;
+        private int mValue;
 
-        internal unsafe RuntimeTypeHandle(void* pValue) { mValue = new IntPtr(pValue); }
-
-        public IntPtr Value { get { return mValue; } }
+        public int Value { get { return mValue; } }
     }
 }

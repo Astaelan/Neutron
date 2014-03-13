@@ -6,15 +6,25 @@
 extern "C" {
 #pragma pack(push)
 #pragma pack(1)
+    struct SystemRuntimeTypeHandle
+    {
+		int32_t mValue;
+	};
+
+	struct SystemRuntimeMethodHandle
+	{
+		int32_t mValue;
+	};
+
     struct SystemObject
     {
-		void* mRuntimeTypeHandle;
+		SystemRuntimeTypeHandle mRuntimeTypeHandle;
 	};
 
 	struct SystemDelegate : public SystemObject
 	{
 		SystemObject* mTargetObj;
-		void* mTargetMethod;
+		SystemRuntimeMethodHandle mTargetMethod;
 		SystemDelegate* mNext;
 	};
 
@@ -48,7 +58,7 @@ extern "C" {
 
 	struct SystemRuntimeType : public SystemType
 	{
-		void* mHandle;
+		SystemRuntimeTypeHandle mHandle;
 		SystemRuntimeTypeData* mData;
 	};
 #pragma pack(pop)
@@ -72,14 +82,14 @@ extern "C" {
 	extern int32_t RuntimeMethodDataFunctionTableCount;
 
 	void __cdecl GCAllocate(void** _this, size_t size, int32_t handle);
-	int32_t __cdecl VTableHandleLookup(void* _this, int32_t index);
-	void* __cdecl VTableFunctionLookup(void* _this, int32_t index);
+	int32_t __cdecl VTableHandleLookup(SystemObject* _this, int32_t index);
+	void* __cdecl VTableFunctionLookup(SystemObject* _this, int32_t index);
 	void* __cdecl DelegateLookup(SystemDelegate* _this);
 	void* __cdecl DelegateInstance(SystemDelegate* _this);
 
-	void* __cdecl F_699DAC97BED1D622(void* _this, SystemObject* pObject);    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
+	SystemRuntimeTypeHandle __cdecl F_699DAC97BED1D622(void* _this, SystemObject* pObject);    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
 
-	SystemRuntimeTypeData* __cdecl F_08D4265147985EF9(void* _this, void* pHandle);    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
+	SystemRuntimeTypeData* __cdecl F_08D4265147985EF9(void* _this, SystemRuntimeTypeHandle pHandle);    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
 	int8_t* __cdecl F_38731037EF6816B8(void* _this, int32_t pOffset);    // System.SByte* System.RuntimeType.InternalGetRuntimeTypeDataString(System.Int32)
 
 	void __cdecl F_3D1FB7A7FAEF7651(void* _this, SystemString** pString, int32_t pLength);    // System.Void System.String.InternalAllocate(System.String, System.Int32)
@@ -94,14 +104,14 @@ void __cdecl GCAllocate(void** _this, size_t size, int32_t handle)
 {
 	*_this = calloc(size, 1);
 	SystemObject* obj = (SystemObject*)*_this;
-	obj->mRuntimeTypeHandle = (void*)handle;
+	obj->mRuntimeTypeHandle.mValue = handle;
 	// TODO: Link obj to alive list
 	printf("GCAllocate: %u bytes for %d\n", size, handle);
 }
 
-int32_t __cdecl VTableHandleLookup(void* _this, int32_t index)
+int32_t __cdecl VTableHandleLookup(SystemObject* _this, int32_t index)
 {
-	int32_t handle = (int32_t)((SystemObject*)_this)->mRuntimeTypeHandle;
+	int32_t handle = _this->mRuntimeTypeHandle.mValue;
 	int32_t vtable = RuntimeTypeDataTable[handle].VTable;
 	int32_t offset = vtable + index;
 	int32_t mhandle = RuntimeTypeDataVirtualTable[offset];
@@ -109,7 +119,7 @@ int32_t __cdecl VTableHandleLookup(void* _this, int32_t index)
 	return mhandle;
 }
 
-void* __cdecl VTableFunctionLookup(void* _this, int32_t index)
+void* __cdecl VTableFunctionLookup(SystemObject* _this, int32_t index)
 {
 	int32_t mhandle = VTableHandleLookup(_this, index);
 	//printf("VTableFunctionLookup: handle = %d\n", mhandle);
@@ -118,28 +128,28 @@ void* __cdecl VTableFunctionLookup(void* _this, int32_t index)
 
 void* __cdecl DelegateLookup(SystemDelegate* _this)
 {
-	return RuntimeMethodDataFunctionTable[(int32_t)_this->mTargetMethod];
+	return RuntimeMethodDataFunctionTable[_this->mTargetMethod.mValue];
 }
 
 void* __cdecl DelegateInstance(SystemDelegate* _this)
 {
-	void* result = (void*)_this->mTargetObj;
-	uint8_t boxed = (RuntimeTypeDataTable[(int32_t)_this->mTargetObj->mRuntimeTypeHandle].Flags & (1 << 0)) != 0;
-	if (boxed) result = (void*)(((uint8_t*)result) + sizeof(SystemObject));
-	return result;
+	uint8_t* result = (uint8_t*)_this->mTargetObj;
+	uint8_t boxed = (RuntimeTypeDataTable[_this->mTargetObj->mRuntimeTypeHandle.mValue].Flags & (1 << 0)) != 0;
+	if (boxed) result += sizeof(SystemObject);
+	return (void*)result;
 }
 
-void* __cdecl F_699DAC97BED1D622(void* _this, SystemObject* pObject)    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
+SystemRuntimeTypeHandle __cdecl F_699DAC97BED1D622(void* _this, SystemObject* pObject)    // System.RuntimeTypeHandle System.Object.InternalGetRuntimeTypeHandle(System.Object)
 {
 	//printf("InternalGetRuntimeTypeHandle: %d\n", (int32_t)pObject);
 	//printf("InternalGetRuntimeTypeHandle: handle = %d\n", (int32_t)pObject->mRuntimeTypeHandle);
 	return pObject->mRuntimeTypeHandle;
 }
 
-SystemRuntimeTypeData* __cdecl F_08D4265147985EF9(void* _this, void* pHandle)    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
+SystemRuntimeTypeData* __cdecl F_08D4265147985EF9(void* _this, SystemRuntimeTypeHandle pHandle)    // System.RuntimeTypeData* System.RuntimeType.InternalGetRuntimeTypeData(System.RuntimeTypeHandle)
 {
 	//printf("InternalGetRuntimeTypeData: handle = %d, vtable = %d\n", (int32_t)pHandle, RuntimeTypeDataTable[(int32_t)pHandle].VTable);
-	return &RuntimeTypeDataTable[(int32_t)pHandle];
+	return &RuntimeTypeDataTable[pHandle.mValue];
 }
 
 int8_t* __cdecl F_38731037EF6816B8(void* _this, int32_t pOffset)    // System.SByte* System.RuntimeType.InternalGetRuntimeTypeDataString(System.Int32)
@@ -161,7 +171,6 @@ void __cdecl F_204310C5649413C5(SystemString** _this, int16_t* pValue)    // Sys
 	int32_t stringLength = 0;
 	while (pValue[stringLength]) ++stringLength;
 	GCAllocate((void**)_this, sizeof(SystemString) + (stringLength << 1), RuntimeTypeHandle_SystemString);
-	(*_this)->mRuntimeTypeHandle = NULL;
 	(*_this)->mArrayLength = stringLength + 1;
 	(*_this)->mStringLength = stringLength;
 	int16_t* chars = &(*_this)->mFirstChar;
@@ -172,7 +181,6 @@ void __cdecl F_204310C5649413C5(SystemString** _this, int16_t* pValue)    // Sys
 void __cdecl F_164E479A86BE82E3(SystemString** _this, int16_t pChar, int32_t pCount)    // System.Void System.String..ctor(System.Char, System.Int32)
 {
 	GCAllocate((void**)_this, sizeof(SystemString) + (pCount << 1), RuntimeTypeHandle_SystemString);
-	(*_this)->mRuntimeTypeHandle = NULL;
 	(*_this)->mArrayLength = pCount + 1;
 	(*_this)->mStringLength = pCount;
 	int16_t* chars = &(*_this)->mFirstChar;
@@ -185,7 +193,6 @@ void __cdecl F_9E4B5118337A8FDD(SystemString** _this, int8_t* pValue)    // Syst
 	int32_t stringLength = 0;
 	while (pValue[stringLength]) ++stringLength;
 	GCAllocate((void**)_this, sizeof(SystemString) + (stringLength << 1), RuntimeTypeHandle_SystemString);
-	(*_this)->mRuntimeTypeHandle = NULL;
 	(*_this)->mArrayLength = stringLength + 1;
 	(*_this)->mStringLength = stringLength;
 	int16_t* chars = &(*_this)->mFirstChar;

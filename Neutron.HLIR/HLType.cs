@@ -83,7 +83,7 @@ namespace Neutron.HLIR
                     case PrimitiveTypeCode.NotPrimitive:
                         {
                             int calculatedSize = 0;
-                            if (Definition.IsReferenceType) calculatedSize += HLDomain.SizeOfPointer;
+                            if (Definition.IsReferenceType) calculatedSize += HLDomain.SystemRuntimeTypeHandle.VariableSize;
                             return calculatedSize + MemberFields.Sum(f => f.Type.VariableSize);
                         }
                     default: throw new NotSupportedException();
@@ -96,7 +96,7 @@ namespace Neutron.HLIR
         internal void LayoutFields()
         {
             int offset = 0;
-            if (Definition.IsReferenceType) offset += HLDomain.SizeOfPointer;
+            if (Definition.IsReferenceType) offset += HLDomain.SystemRuntimeTypeHandle.VariableSize;
             foreach (HLField field in MemberFields)
             {
                 field.Offset = offset;

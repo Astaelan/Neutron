@@ -5,7 +5,7 @@ namespace System
     public class Object
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static extern RuntimeTypeHandle InternalGetRuntimeTypeHandle(object pObject);
+        internal static extern RuntimeTypeHandle InternalGetRuntimeTypeHandle(object pObject);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
         internal static extern bool InternalEquals(object pObjectA, object pObjectB);

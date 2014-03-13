@@ -39,7 +39,7 @@ namespace Neutron.HLIR.Instructions
                 parameters.Add(LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCRoot.Parameters[1].Type, "null")));
                 pFunction.CurrentBlock.EmitCall(null, LLFunctionLocation.Create(HLDomain.GCRoot), parameters);
 
-                LLLocation locationTotalSize = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[1].Type, (HLDomain.SizeOfPointer + mSource.Type.CalculatedSize).ToString()));
+                LLLocation locationTotalSize = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[1].Type, (HLDomain.SystemObject.CalculatedSize + mSource.Type.CalculatedSize).ToString()));
                 LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[2].Type, mSource.Type.RuntimeTypeHandle.ToString()));
 
                 parameters.Clear();
@@ -52,7 +52,7 @@ namespace Neutron.HLIR.Instructions
                 pFunction.CurrentBlock.EmitLoad(locationObject, locationObjectReference);
 
                 LLLocation locationObjectValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationObject.Type));
-                pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationObject, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
+                pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationObject, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SystemObject.CalculatedSize.ToString())));
                 locationObjectValue = pFunction.CurrentBlock.EmitConversion(locationObjectValue, mSource.Type.LLType.PointerDepthPlusOne);
 
                 pFunction.CurrentBlock.EmitStore(locationObjectValue, locationSource);
@@ -64,7 +64,7 @@ namespace Neutron.HLIR.Instructions
 
                 // TODO: Branch on destination type handle not matching object handle, and throw exception
                 LLLocation locationObjectValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationSource.Type));
-                pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationSource, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
+                pFunction.CurrentBlock.EmitGetElementPointer(locationObjectValue, locationSource, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SystemObject.CalculatedSize.ToString())));
                 locationObjectValue = pFunction.CurrentBlock.EmitConversion(locationObjectValue, mDestination.Type.LLType.PointerDepthPlusOne);
 
                 LLLocation locationValue = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationObjectValue.Type.PointerDepthMinusOne));

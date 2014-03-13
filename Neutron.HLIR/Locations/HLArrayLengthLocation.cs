@@ -28,7 +28,7 @@ namespace Neutron.HLIR.Locations
             LLLocation locationArrayPointer = Instance.Load(pFunction);
             locationArrayPointer = pFunction.CurrentBlock.EmitConversion(locationArrayPointer, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1));
             LLLocation locationArraySizePointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayPointer.Type));
-            pFunction.CurrentBlock.EmitGetElementPointer(locationArraySizePointer, locationArrayPointer, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
+            pFunction.CurrentBlock.EmitGetElementPointer(locationArraySizePointer, locationArrayPointer, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SystemArray.Fields["mLength"].Offset.ToString())));
             locationArraySizePointer = pFunction.CurrentBlock.EmitConversion(locationArraySizePointer, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateSignedType(32), 1));
             LLLocation locationTemporary = LLTemporaryLocation.Create(pFunction.CreateTemporary(LLModule.GetOrCreateSignedType(32)));
             pFunction.CurrentBlock.EmitLoad(locationTemporary, locationArraySizePointer);

@@ -2,8 +2,8 @@
 {
     public abstract class Delegate
     {
-        private object mTargetObj = null;
-        private IntPtr mTargetMethod = IntPtr.Zero;
+        protected object mTargetObj = null;
+        protected RuntimeMethodHandle mTargetMethod = new RuntimeMethodHandle();
         protected Delegate mNext = null;
 
         protected Delegate() { }

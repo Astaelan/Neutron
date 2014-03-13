@@ -18,7 +18,7 @@ namespace System
         }
         public override int GetHashCode()
         {
-            if (mType.Value == IntPtr.Zero) return 0;
+            if (mType.Value == 0) return 0;
             return Type.GetTypeFromHandle(mType).GetHashCode();
         }
     }

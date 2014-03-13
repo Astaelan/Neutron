@@ -49,7 +49,7 @@ namespace Neutron.HLIR.Instructions
                 pFunction.CurrentBlock.EmitMultiply(locationElementsSize, locationSize, LLLiteralLocation.Create(LLLiteral.Create(locationSize.Type, mElementType.VariableSize.ToString())));
             }
             LLLocation locationTotalSize = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationSize.Type));
-            pFunction.CurrentBlock.EmitAdd(locationTotalSize, locationElementsSize, LLLiteralLocation.Create(LLLiteral.Create(locationSize.Type, (HLDomain.SizeOfPointer + 4).ToString())));
+            pFunction.CurrentBlock.EmitAdd(locationTotalSize, locationElementsSize, LLLiteralLocation.Create(LLLiteral.Create(locationSize.Type, (HLDomain.SystemArray.CalculatedSize).ToString())));
             locationTotalSize = pFunction.CurrentBlock.EmitConversion(locationTotalSize, HLDomain.GCAllocate.Parameters[1].Type);
 
             LLLocation locationHandle = LLLiteralLocation.Create(LLLiteral.Create(HLDomain.GCAllocate.Parameters[2].Type, mArrayType.RuntimeTypeHandle.ToString()));
@@ -65,7 +65,7 @@ namespace Neutron.HLIR.Instructions
             locationArrayPointer = pFunction.CurrentBlock.EmitConversion(locationArrayPointer, LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1));
             
             LLLocation locationArraySizePointer = LLTemporaryLocation.Create(pFunction.CreateTemporary(locationArrayPointer.Type));
-            pFunction.CurrentBlock.EmitGetElementPointer(locationArraySizePointer, locationArrayPointer, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SizeOfPointer.ToString())));
+            pFunction.CurrentBlock.EmitGetElementPointer(locationArraySizePointer, locationArrayPointer, LLLiteralLocation.Create(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), HLDomain.SystemObject.CalculatedSize.ToString())));
             locationArraySizePointer = pFunction.CurrentBlock.EmitConversion(locationArraySizePointer, locationSize.Type.PointerDepthPlusOne);
             pFunction.CurrentBlock.EmitStore(locationArraySizePointer, locationSize);
         }
