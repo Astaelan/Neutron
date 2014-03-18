@@ -8,7 +8,15 @@ namespace Neutron.HLIR
 {
     public sealed class HLField
     {
-        internal HLField() { }
+        private static int sRuntimeFieldHandle = 0;
+
+        internal HLField()
+        {
+            mRuntimeFieldHandle = sRuntimeFieldHandle++;
+        }
+
+        private int mRuntimeFieldHandle = 0;
+        public int RuntimeFieldHandle { get { return mRuntimeFieldHandle; } }
 
         //private IFieldDefinition mDefinition = null;
         //public IFieldDefinition Definition { get { return mDefinition; } internal set { mDefinition = value; } }
@@ -27,6 +35,9 @@ namespace Neutron.HLIR
 
         private bool mIsCompileTimeConstant = false;
         public bool IsCompileTimeConstant { get { return mIsCompileTimeConstant; } internal set { mIsCompileTimeConstant = value; } }
+
+        private object mCompileTimeConstant = null;
+        public object CompileTimeConstant { get { return mCompileTimeConstant; } internal set { mCompileTimeConstant = value; } }
 
         private HLType mType = null;
         public HLType Type { get { return mType; } internal set { mType = value; } }

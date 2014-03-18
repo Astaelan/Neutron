@@ -95,6 +95,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="HLDomain.cs" />
+    <Compile Include="HLStringTable.cs" />
     <Compile Include="HLLiteralLocation.cs" />
     <Compile Include="HLTemporary.cs" />
     <Compile Include="HLLocal.cs" />
@@ -134,6 +135,7 @@
     <Compile Include="Locations\HLCharLiteralLocation.cs" />
     <Compile Include="Locations\HLArrayElementLocation.cs" />
     <Compile Include="Locations\HLBooleanLiteralLocation.cs" />
+    <Compile Include="Locations\HLEnumLiteralLocation.cs" />
     <Compile Include="Locations\HLInt8LiteralLocation.cs" />
     <Compile Include="Locations\HLInt16LiteralLocation.cs" />
     <Compile Include="Locations\HLInt64LiteralLocation.cs" />

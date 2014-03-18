@@ -6,12 +6,16 @@ namespace System
     internal unsafe struct RuntimeTypeData
     {
         public const int IsValueFlag = 1 << 0;
+        public const int IsEnumFlag = 1 << 1;
 
         public int Handle;
         public int Flags;
         public int Size;
-        public int Name;
-        public int Namespace;
-        public int VTable;
+        public int NameOffset;
+        public int NamespaceOffset;
+        public int VTableOffset;
+
+        public int EnumOffset;
+        public int EnumCount;
     }
 }

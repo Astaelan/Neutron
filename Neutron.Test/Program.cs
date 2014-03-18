@@ -48,9 +48,12 @@ namespace Neutron.Test
             //TestD d = TestX.Test2;
             //return d(42);
 
-            TestX x = new TestX();
-            TestD d = x.Test;
-            return d(42);
+            //TestX x = new TestX();
+            //TestD d = x.Test;
+            //return d(42);
+
+            ConsoleWrite(MethodImplOptions.InternalCall.ToString());
+            return 42;
         }
 
         private delegate int TestD(int x);

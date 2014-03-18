@@ -421,6 +421,7 @@ namespace Neutron.HLIR
         private HLLocation ProcessCompileTimeConstantExpression(ICompileTimeConstant pExpression)
         {
             if (pExpression.Value == null) return HLNullLocation.Create(HLDomain.GetOrCreateType(pExpression.Type));
+            if (pExpression.Type.ResolvedType.IsEnum) return HLEnumLiteralLocation.Create(HLDomain.GetOrCreateType(pExpression.Type), pExpression.Value.ToString());
             if (pExpression.Value is bool) return HLBooleanLiteralLocation.Create((bool)pExpression.Value);
             if (pExpression.Value is sbyte) return HLInt8LiteralLocation.Create((sbyte)pExpression.Value);
             if (pExpression.Value is byte) return HLUInt8LiteralLocation.Create((byte)pExpression.Value);

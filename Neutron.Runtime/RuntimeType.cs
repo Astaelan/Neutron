@@ -3,13 +3,13 @@ using System.Runtime.CompilerServices;
 
 namespace System
 {
-    public sealed unsafe class RuntimeType : Type
+    internal sealed unsafe class RuntimeType : Type
     {
         [MethodImpl(MethodImplOptions.InternalCall)]
-        private static unsafe extern RuntimeTypeData* InternalGetRuntimeTypeData(RuntimeTypeHandle pHandle);
+        internal static unsafe extern RuntimeTypeData* InternalGetRuntimeTypeData(RuntimeTypeHandle pHandle);
 
         [MethodImpl(MethodImplOptions.InternalCall)]
-        public static unsafe extern sbyte* InternalGetRuntimeTypeDataString(int pOffset);
+        internal static unsafe extern sbyte* InternalGetRuntimeTypeDataString(int pOffset);
 
         private RuntimeTypeHandle mHandle;
         private RuntimeTypeData* mData;
@@ -23,8 +23,8 @@ namespace System
 
         public override string ToString() { return Namespace + "." + Name; }
 
-        public override string Name { get { return new string(InternalGetRuntimeTypeDataString(mData->Name)); } }
-        public override string Namespace { get { return new string(InternalGetRuntimeTypeDataString(mData->Namespace)); } }
+        public override string Name { get { return new string(InternalGetRuntimeTypeDataString(mData->NameOffset)); } }
+        public override string Namespace { get { return new string(InternalGetRuntimeTypeDataString(mData->NamespaceOffset)); } }
 
     }
 }

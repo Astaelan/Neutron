@@ -126,14 +126,19 @@ namespace Neutron.HLIR
 
             foreach (HLMethod method in sMethods.Values.ToList()) method.BuildFunction();
 
+            HLStringTable stringTable = new HLStringTable();
+
             // STARTED: Build constant global runtime type handles
             BuildRuntimeTypeHandles();
 
             // STARTED: Build constant global runtime type data
-            BuildRuntimeTypeData();
+            BuildRuntimeTypeData(stringTable);
 
             // STARTED: Build constant global runtime method data
-            BuildRuntimeMethodData();
+            BuildRuntimeMethodData(stringTable);
+
+            // STARTED: Build constant global runtime data string table
+            BuildRuntimeDataStringTable(stringTable);
 
             // STARTED: Convert HLInstructions to LLInstructions
             foreach (HLMethod method in sMethods.Values) method.Transform();
@@ -152,7 +157,7 @@ namespace Neutron.HLIR
             type.Name = pDefinition.ToString(); // TODO: Don't really like this, should use TypeHelper perhaps?
             type.Signature = HLDomain.GetTypeSignature(pDefinition);
             sTypes[type.Signature] = type;
-            
+
             ITypeReference referenceBase = pDefinition.BaseClasses.FirstOrDefault();
             if (referenceBase != null)
             {
@@ -190,6 +195,7 @@ namespace Neutron.HLIR
 
             field.IsStatic = pDefinition.IsStatic;
             field.IsCompileTimeConstant = pDefinition.IsCompileTimeConstant;
+            if (field.IsCompileTimeConstant) field.CompileTimeConstant = pDefinition.Constant.Value;
             field.Type = GetOrCreateType(pDefinition.Type);
             return field;
         }
@@ -388,7 +394,7 @@ namespace Neutron.HLIR
 
         private static void BuildRuntimeTypeHandles()
         {
-            foreach (HLType type in sTypes.Values.OrderBy(t => t.RuntimeTypeHandle).Where(t => t.Definition.TypeCode != PrimitiveTypeCode.Pointer && t.Definition.TypeCode != PrimitiveTypeCode.Reference))
+            foreach (HLType type in sTypes.Values.OrderBy(t => t.RuntimeTypeHandle).Where(t => t.Definition.TypeCode != PrimitiveTypeCode.Pointer && t.Definition.TypeCode != PrimitiveTypeCode.Reference && !(t.Definition is IArrayType)))
             {
                 string globalName = "RuntimeTypeHandle_" + type.ToString().Replace(".", "");
                 //int startOfPtrOrRef = globalName.IndexOfAny(new char[] { '*', '&' });
@@ -400,7 +406,7 @@ namespace Neutron.HLIR
             }
         }
 
-        private static void BuildRuntimeTypeData()
+        private static void BuildRuntimeTypeData(HLStringTable pStringTable)
         {
             List<LLType> fieldsRuntimeTypeData = sSystemRuntimeTypeData.Fields.Where(f => !f.IsStatic).ToList().ConvertAll(f => f.Type.LLType);
             LLType typePointer = LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);
@@ -408,40 +414,87 @@ namespace Neutron.HLIR
             LLType typeRuntimeTypeDataTable = LLModule.GetOrCreateArrayType(typeRuntimeTypeData, sTypes.Values.Count);
             LLGlobal globalRuntimeTypeDataTable = LLModule.CreateGlobal(typeRuntimeTypeDataTable.PointerDepthPlusOne, "RuntimeTypeDataTable");
             List<LLLiteral> literalsRuntimeTypeDataTable = new List<LLLiteral>();
-            Dictionary<string, int> stringsRuntimeTypeDataStringTable = new Dictionary<string, int>();
-            string stringRuntimeTypeDataStringTable = "";
+            List<LLLiteral> literalsRuntimeTypeDataEnum8ValueTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum16ValueTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum32ValueTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum64ValueTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum8NameTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum16NameTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum32NameTable = new List<LLLiteral>();
+            List<LLLiteral> literalsRuntimeTypeDataEnum64NameTable = new List<LLLiteral>();
             List<int> handlesRuntimeTypeDataVirtualTable = new List<int>();
             List<LLLiteral> literalsRuntimeTypeDataVirtualTable = new List<LLLiteral>();
 
-            stringsRuntimeTypeDataStringTable[""] = stringRuntimeTypeDataStringTable.Length;
-            stringRuntimeTypeDataStringTable += "\0";
             foreach (HLType type in sTypes.Values.OrderBy(t => t.RuntimeTypeHandle))
             {
                 int flags = 0;
                 if (type.Definition.IsValueType) flags |= 1 << 0;
+                if (type.Definition.IsEnum) flags |= 1 << 1;
 
-                int offsetName = 0;
                 string definitionName = TypeHelper.GetTypeName(type.Definition, NameFormattingOptions.OmitContainingNamespace);
-                if (!stringsRuntimeTypeDataStringTable.TryGetValue(definitionName, out offsetName))
-                {
-                    offsetName = stringRuntimeTypeDataStringTable.Length;
-                    stringsRuntimeTypeDataStringTable[definitionName] = offsetName;
-                    stringRuntimeTypeDataStringTable += definitionName + "\0";
-                }
-
+                int offsetName = pStringTable.Include(definitionName);
                 int offsetNamespace = 0;
                 if (type.Definition is INamespaceTypeDefinition)
                 {
                     string definitionNamespace = TypeHelper.GetNamespaceName(((INamespaceTypeDefinition)type.Definition).ContainingUnitNamespace, NameFormattingOptions.None);
-                    if (!stringsRuntimeTypeDataStringTable.TryGetValue(definitionNamespace, out offsetNamespace))
+                    offsetNamespace = pStringTable.Include(definitionNamespace);
+                }
+
+                int offsetEnum = 0;
+                int countEnum = 0;
+                if (type.Definition.IsEnum)
+                {
+                    countEnum = type.StaticFields.Count;
+                    switch (type.MemberFields[0].Type.VariableSize)
                     {
-                        offsetNamespace = stringRuntimeTypeDataStringTable.Length;
-                        stringsRuntimeTypeDataStringTable[definitionNamespace] = offsetNamespace;
-                        stringRuntimeTypeDataStringTable += definitionNamespace + "\0";
+                        case 1:
+                            offsetEnum = literalsRuntimeTypeDataEnum8ValueTable.Count;
+                            for (int index = 0; index < type.StaticFields.Count; ++index)
+                            {
+                                int offsetEnumName = pStringTable.Include(type.StaticFields[index].Name);
+                                literalsRuntimeTypeDataEnum8ValueTable.Add(LLLiteral.Create(LLModule.GetOrCreateUnsignedType(8), type.StaticFields[index].CompileTimeConstant.ToString()));
+                                literalsRuntimeTypeDataEnum8NameTable.Add(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), offsetEnumName.ToString()));
+                            }
+                            break;
+                        case 2:
+                            offsetEnum = literalsRuntimeTypeDataEnum16ValueTable.Count;
+                            for (int index = 0; index < type.StaticFields.Count; ++index)
+                            {
+                                int offsetEnumName = pStringTable.Include(type.StaticFields[index].Name);
+                                literalsRuntimeTypeDataEnum16ValueTable.Add(LLLiteral.Create(LLModule.GetOrCreateUnsignedType(16), type.StaticFields[index].CompileTimeConstant.ToString()));
+                                literalsRuntimeTypeDataEnum16NameTable.Add(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), offsetEnumName.ToString()));
+                            }
+                            break;
+                        case 4:
+                            offsetEnum = literalsRuntimeTypeDataEnum32ValueTable.Count;
+                            for (int index = 0; index < type.StaticFields.Count; ++index)
+                            {
+                                int offsetEnumName = pStringTable.Include(type.StaticFields[index].Name);
+                                literalsRuntimeTypeDataEnum32ValueTable.Add(LLLiteral.Create(LLModule.GetOrCreateUnsignedType(32), type.StaticFields[index].CompileTimeConstant.ToString()));
+                                literalsRuntimeTypeDataEnum32NameTable.Add(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), offsetEnumName.ToString()));
+                            }
+                            break;
+                        case 8:
+                            offsetEnum = literalsRuntimeTypeDataEnum64ValueTable.Count;
+                            for (int index = 0; index < type.StaticFields.Count; ++index)
+                            {
+                                int offsetEnumName = pStringTable.Include(type.StaticFields[index].Name);
+                                literalsRuntimeTypeDataEnum64ValueTable.Add(LLLiteral.Create(LLModule.GetOrCreateUnsignedType(64), type.StaticFields[index].CompileTimeConstant.ToString()));
+                                literalsRuntimeTypeDataEnum64NameTable.Add(LLLiteral.Create(LLModule.GetOrCreateSignedType(32), offsetEnumName.ToString()));
+                            }
+                            break;
+                        default: throw new NotSupportedException();
                     }
                 }
 
-                literalsRuntimeTypeDataTable.Add(typeRuntimeTypeData.ToLiteral(type.RuntimeTypeHandle.ToString(), flags.ToString(), type.CalculatedSize.ToString(), offsetName.ToString(), offsetNamespace.ToString(), handlesRuntimeTypeDataVirtualTable.Count.ToString()));
+                literalsRuntimeTypeDataTable.Add(typeRuntimeTypeData.ToLiteral(type.RuntimeTypeHandle.ToString(),
+                                                                               flags.ToString(),
+                                                                               type.CalculatedSize.ToString(),
+                                                                               offsetName.ToString(),
+                                                                               offsetNamespace.ToString(),
+                                                                               handlesRuntimeTypeDataVirtualTable.Count.ToString(),
+                                                                               offsetEnum.ToString(),
+                                                                               countEnum.ToString()));
 
                 //List<LLFunction> functions = type.VirtualTable.ConvertAll(m => m.LLFunction);
                 foreach (HLMethod method in type.VirtualTable)
@@ -462,11 +515,37 @@ namespace Neutron.HLIR
             LLGlobal globalRuntimeTypeDataTableCount = LLModule.CreateGlobal(LLModule.GetOrCreateSignedType(32), "RuntimeTypeDataTableCount");
             globalRuntimeTypeDataTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), sTypes.Values.Count.ToString());
 
-            byte[] bufferRuntimeTypeDataStringTable = Encoding.ASCII.GetBytes(stringRuntimeTypeDataStringTable);
-            string[] literalsRuntimeTypeDataStringTable = Array.ConvertAll(bufferRuntimeTypeDataStringTable, b => b.ToString());
-            LLType typeRuntimeTypeDataStringTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(8), literalsRuntimeTypeDataStringTable.Length);
-            LLGlobal globalRuntimeTypeDataStringTable = LLModule.CreateGlobal(typeRuntimeTypeDataStringTable.PointerDepthPlusOne, "RuntimeTypeDataStringTable");
-            globalRuntimeTypeDataStringTable.InitialValue = typeRuntimeTypeDataStringTable.ToLiteral(literalsRuntimeTypeDataStringTable);
+            LLType typeRuntimeTypeDataEnum8ValueTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateUnsignedType(8), literalsRuntimeTypeDataEnum8ValueTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum8ValueTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum8ValueTable.PointerDepthPlusOne, "RuntimeTypeDataEnum8ValueTable");
+            globalRuntimeTypeDataEnum8ValueTable.InitialValue = typeRuntimeTypeDataEnum8ValueTable.ToLiteral(literalsRuntimeTypeDataEnum8ValueTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum8NameTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(32), literalsRuntimeTypeDataEnum8NameTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum8NameTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum8NameTable.PointerDepthPlusOne, "RuntimeTypeDataEnum8NameTable");
+            globalRuntimeTypeDataEnum8NameTable.InitialValue = typeRuntimeTypeDataEnum8NameTable.ToLiteral(literalsRuntimeTypeDataEnum8NameTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum16ValueTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateUnsignedType(16), literalsRuntimeTypeDataEnum16ValueTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum16ValueTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum16ValueTable.PointerDepthPlusOne, "RuntimeTypeDataEnum16ValueTable");
+            globalRuntimeTypeDataEnum16ValueTable.InitialValue = typeRuntimeTypeDataEnum16ValueTable.ToLiteral(literalsRuntimeTypeDataEnum16ValueTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum16NameTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(32), literalsRuntimeTypeDataEnum16NameTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum16NameTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum16NameTable.PointerDepthPlusOne, "RuntimeTypeDataEnum16NameTable");
+            globalRuntimeTypeDataEnum16NameTable.InitialValue = typeRuntimeTypeDataEnum16NameTable.ToLiteral(literalsRuntimeTypeDataEnum16NameTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum32ValueTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateUnsignedType(32), literalsRuntimeTypeDataEnum32ValueTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum32ValueTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum32ValueTable.PointerDepthPlusOne, "RuntimeTypeDataEnum32ValueTable");
+            globalRuntimeTypeDataEnum32ValueTable.InitialValue = typeRuntimeTypeDataEnum32ValueTable.ToLiteral(literalsRuntimeTypeDataEnum32ValueTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum32NameTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(32), literalsRuntimeTypeDataEnum32NameTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum32NameTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum32NameTable.PointerDepthPlusOne, "RuntimeTypeDataEnum32NameTable");
+            globalRuntimeTypeDataEnum32NameTable.InitialValue = typeRuntimeTypeDataEnum32NameTable.ToLiteral(literalsRuntimeTypeDataEnum32NameTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum64ValueTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateUnsignedType(64), literalsRuntimeTypeDataEnum64ValueTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum64ValueTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum64ValueTable.PointerDepthPlusOne, "RuntimeTypeDataEnum64ValueTable");
+            globalRuntimeTypeDataEnum64ValueTable.InitialValue = typeRuntimeTypeDataEnum64ValueTable.ToLiteral(literalsRuntimeTypeDataEnum64ValueTable.ConvertAll(l => l.Value).ToArray());
+
+            LLType typeRuntimeTypeDataEnum64NameTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(32), literalsRuntimeTypeDataEnum64NameTable.Count);
+            LLGlobal globalRuntimeTypeDataEnum64NameTable = LLModule.CreateGlobal(typeRuntimeTypeDataEnum64NameTable.PointerDepthPlusOne, "RuntimeTypeDataEnum64NameTable");
+            globalRuntimeTypeDataEnum64NameTable.InitialValue = typeRuntimeTypeDataEnum64NameTable.ToLiteral(literalsRuntimeTypeDataEnum64NameTable.ConvertAll(l => l.Value).ToArray());
 
             LLType typeRuntimeTypeDataVirtualTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(32), handlesRuntimeTypeDataVirtualTable.Count);
             LLGlobal globalRuntimeTypeDataVirtualTable = LLModule.CreateGlobal(typeRuntimeTypeDataVirtualTable.PointerDepthPlusOne, "RuntimeTypeDataVirtualTable");
@@ -475,7 +554,7 @@ namespace Neutron.HLIR
             globalRuntimeTypeDataVirtualTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), handlesRuntimeTypeDataVirtualTable.Count.ToString());
         }
 
-        private static void BuildRuntimeMethodData()
+        private static void BuildRuntimeMethodData(HLStringTable pStringTable)
         {
             List<LLType> fieldsRuntimeMethodData = sSystemRuntimeMethodData.Fields.Where(f => !f.IsStatic).ToList().ConvertAll(f => f.Type.LLType);
             LLType typePointer = LLModule.GetOrCreatePointerType(LLModule.GetOrCreateUnsignedType(8), 1);
@@ -483,26 +562,16 @@ namespace Neutron.HLIR
             LLType typeRuntimeMethodDataTable = LLModule.GetOrCreateArrayType(typeRuntimeMethodData, sMethods.Values.Count);
             LLGlobal globalRuntimeMethodDataTable = LLModule.CreateGlobal(typeRuntimeMethodDataTable.PointerDepthPlusOne, "RuntimeMethodDataTable");
             List<LLLiteral> literalsRuntimeMethodDataTable = new List<LLLiteral>();
-            Dictionary<string, int> stringsRuntimeMethodDataStringTable = new Dictionary<string, int>();
-            string stringRuntimeMethodDataStringTable = "";
             List<LLFunction> functionsRuntimeMethodDataFunctionTable = new List<LLFunction>();
             List<LLLiteral> literalsRuntimeMethodDataFunctionTable = new List<LLLiteral>();
 
-            stringsRuntimeMethodDataStringTable[""] = stringRuntimeMethodDataStringTable.Length;
-            stringRuntimeMethodDataStringTable += "\0";
             foreach (HLMethod method in sMethods.Values.OrderBy(m => m.RuntimeMethodHandle))
             {
                 int flags = 0;
                 if (method.IsStatic) flags |= 1 << 0;
 
-                int offsetName = 0;
                 string definitionName = method.Definition.Name.Value;
-                if (!stringsRuntimeMethodDataStringTable.TryGetValue(definitionName, out offsetName))
-                {
-                    offsetName = stringRuntimeMethodDataStringTable.Length;
-                    stringsRuntimeMethodDataStringTable[definitionName] = offsetName;
-                    stringRuntimeMethodDataStringTable += definitionName + "\0";
-                }
+                int offsetName = pStringTable.Include(definitionName);
 
                 literalsRuntimeMethodDataTable.Add(typeRuntimeMethodData.ToLiteral(method.RuntimeMethodHandle.ToString(), flags.ToString(), offsetName.ToString()));
 
@@ -517,12 +586,6 @@ namespace Neutron.HLIR
             LLGlobal globalRuntimeMethodDataTableCount = LLModule.CreateGlobal(LLModule.GetOrCreateSignedType(32), "RuntimeMethodDataTableCount");
             globalRuntimeMethodDataTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), sMethods.Values.Count.ToString());
 
-            byte[] bufferRuntimeMethodDataStringTable = Encoding.ASCII.GetBytes(stringRuntimeMethodDataStringTable);
-            string[] literalsRuntimeMethodDataStringTable = Array.ConvertAll(bufferRuntimeMethodDataStringTable, b => b.ToString());
-            LLType typeRuntimeMethodDataStringTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(8), literalsRuntimeMethodDataStringTable.Length);
-            LLGlobal globalRuntimeMethodDataStringTable = LLModule.CreateGlobal(typeRuntimeMethodDataStringTable.PointerDepthPlusOne, "RuntimeMethodDataStringTable");
-            globalRuntimeMethodDataStringTable.InitialValue = typeRuntimeMethodDataStringTable.ToLiteral(literalsRuntimeMethodDataStringTable);
-
             LLType typeRuntimeMethodDataFunctionTable = LLModule.GetOrCreateArrayType(typePointer, functionsRuntimeMethodDataFunctionTable.Count);
             LLGlobal globalRuntimeMethodDataFunctionTable = LLModule.CreateGlobal(typeRuntimeMethodDataFunctionTable.PointerDepthPlusOne, "RuntimeMethodDataFunctionTable");
             globalRuntimeMethodDataFunctionTable.InitialValue = typeRuntimeMethodDataFunctionTable.ToLiteral(literalsRuntimeMethodDataFunctionTable.ConvertAll(l => l.Value).ToArray());
@@ -530,6 +593,15 @@ namespace Neutron.HLIR
             globalRuntimeMethodDataFunctionTableCount.InitialValue = LLLiteral.Create(LLModule.GetOrCreateSignedType(32), functionsRuntimeMethodDataFunctionTable.Count.ToString());
 
             sRuntimeMethodDataFunctionTable = globalRuntimeMethodDataFunctionTable;
+        }
+
+        private static void BuildRuntimeDataStringTable(HLStringTable pStringTable)
+        {
+            byte[] bufferRuntimeDataStringTable = pStringTable.ToASCIIBytes();
+            string[] literalsRuntimeDataStringTable = Array.ConvertAll(bufferRuntimeDataStringTable, b => b.ToString());
+            LLType typeRuntimeDataStringTable = LLModule.GetOrCreateArrayType(LLModule.GetOrCreateSignedType(8), literalsRuntimeDataStringTable.Length);
+            LLGlobal globalRuntimeDataStringTable = LLModule.CreateGlobal(typeRuntimeDataStringTable.PointerDepthPlusOne, "RuntimeDataStringTable");
+            globalRuntimeDataStringTable.InitialValue = typeRuntimeDataStringTable.ToLiteral(literalsRuntimeDataStringTable);
         }
 
         private static Lazy<HLType> sSystemArray = new Lazy<HLType>(() => GetOrCreateType(PlatformType.SystemArray));
